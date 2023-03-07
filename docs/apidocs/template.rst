@@ -1,4 +1,4 @@
-.. automodule:: prototype_template.template_module
+.. automodule:: vqls.vqls
    :no-members:
    :no-inherited-members:
    :no-special-members:
