@@ -154,9 +154,6 @@ class HadammardTest:
         Returns:
             Lis[TensoredOp]: List of two observables to measure |1> on the control qubit I^...^I^|1><1|
         """
-
-        # one_op = (I - Z) / 2
-        # one_op_ctrl = TensoredOp((self.num_qubits - 1) * [I]) ^ one_op
         p0 = "I" * self.num_qubits
         p1 = "I" * (self.num_qubits-1) + "Z"
         one_op_ctrl = SparsePauliOp([p0,p1], np.array([0.5, -0.5]))

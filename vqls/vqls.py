@@ -8,23 +8,13 @@
 See https://arxiv.org/abs/1909.05820
 """
 
-
-
-from typing import Optional, Union, List, Callable, Tuple, Dict
+from typing import Optional, Union, List, Callable, Dict
 import numpy as np
-
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 from qiskit import Aer
 from qiskit import QuantumCircuit
 from qiskit.algorithms.variational_algorithm import VariationalAlgorithm
-
-
-from qiskit.providers import Backend
-from qiskit.utils import QuantumInstance
-from qiskit.utils.backend_utils import is_aer_provider, is_statevector_backend
 from qiskit.utils.validation import validate_min
-
-
 from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_bounds,
     _validate_initial_point,
@@ -33,21 +23,15 @@ from qiskit.algorithms.minimum_eigen_solvers.vqe import (
 from qiskit.opflow import (
     CircuitSampler
 )
-
-
 from qiskit.algorithms.optimizers import SLSQP, Minimizer, Optimizer
 from qiskit.opflow.gradients import GradientBase
-
-
 from qalcore.qiskit.vqls.variational_linear_solver import (
     VariationalLinearSolver,
     VariationalLinearSolverResult,
 )
 from qalcore.qiskit.vqls.numpy_unitary_matrices import UnitaryDecomposition
 from qalcore.qiskit.vqls.hadamard_test import HadammardTest, HadammardOverlapTest
-
 from qiskit.primitives import BaseEstimator, BaseSampler
-
 from dataclasses import dataclass
 
 @dataclass
@@ -126,9 +110,11 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
     ) -> None:
         r"""
         Args:
+            esitmator: Estimator primitive to compute the expetation value of the circuits
             ansatz: A parameterized circuit used as Ansatz for the wave function.
             optimizer: A classical optimizer. Can either be a Qiskit optimizer or a callable
                 that takes an array as input and returns a Qiskit or SciPy optimization result.
+            sampler: Sampler primitive to sample the output of the Overal Hadammard tests
             initial_point: An optional initial point (i.e. initial parameter values)
                 for the optimizer. If ``None`` then VQLS will look to the ansatz for a preferred
                 point and if not will simply compute a random one.
@@ -152,8 +138,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         self._num_qubits = None
 
         self._max_evals_grouped = max_evals_grouped
-        self._circuit_sampler = None  # type: Optional[CircuitSampler]
-
         self.estimator = estimator
         self.sampler = sampler
         self.ansatz = ansatz
@@ -283,7 +267,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         Args:
             matrix (Union[np.ndarray, QuantumCircuit, List]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of thge linear system
-            appply_explicit_measurement (bool, Optional): add the measurement operation in the circuits
+            options (Dict): dicitonary of options
 
         Raises:
             ValueError: if vector and matrix have different size
@@ -364,9 +348,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
     def _get_norm_circuits(self) -> List[QuantumCircuit]:
         """construct the circuit for the norm
-
-        Raises:
-            RuntimeError: _description_
 
         Returns:
             List[QuantumCircuit]: quantum circuits needed for the norm
@@ -760,7 +741,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         hdmr_tests_norm, hdmr_tests_overlap = self.construct_circuit(matrix, vector,
                                                                      options)
 
-        # compute he coefficient matrix 
+        # compute the coefficient matrix 
         coefficient_matrix = self.get_coefficient_matrix(np.array([mi.coeff for mi in self.matrix_circuits]))
 
         # set an expectation for this algorithm run (will be reset to None at the end)

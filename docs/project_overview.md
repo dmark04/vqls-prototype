@@ -1,8 +1,8 @@
 # Project Overview
 
-## Background
+## Variational Quantum Linear Solver
 
-Give some background on the problem and the research that inspired this software. Explain what real-world problem this software intends to solve.
+VQLS is a variational approach to solving linear system of equations. The method was originally proposed by <xxx>. The vqls-prototype facilitate the use of VQLS for any appliations requiring solivng linear sysstems on simulator or real backend. 
 
 ## Solution Explanation
 

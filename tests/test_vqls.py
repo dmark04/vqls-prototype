@@ -17,14 +17,10 @@ import unittest
 from qiskit.test import QiskitTestCase
 
 import numpy as np
-# from qiskit.algorithms.linear_solvers.numpy_linear_solver import NumPyLinearSolver
 
 from qiskit import BasicAer, QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
-
-from qiskit.quantum_info import Statevector
-
-from qiskit.utils import QuantumInstance, algorithm_globals, has_aer
+from qiskit.utils import algorithm_globals, has_aer
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 from qalcore.qiskit.vqls.numpy_unitary_matrices import UnitaryDecomposition
 
@@ -83,7 +79,6 @@ class TestVQLS(QiskitTestCase):
         rhs = np.array([0.1]*4)
         ansatz = RealAmplitudes(num_qubits=2, reps=3, entanglement='full')
 
-        # classical_solution = NumPyLinearSolver().solve(matrix, rhs/np.linalg.norm(rhs))
         
         for estimator, sampler in  zip(self.estimators, self.samplers):
             for opt in self.options:
@@ -95,13 +90,8 @@ class TestVQLS(QiskitTestCase):
                     callback=self.log.update,
                     sampler=sampler
                 )
-                res = vqls.solve(matrix, rhs, opt)
+                _ = vqls.solve(matrix, rhs, opt)
 
-                # ref_solution = np.abs(classical_solution.state / np.linalg.norm(classical_solution.state))
-                # vqls_solution = np.abs(np.real(Statevector(res.state).data))
-                
-                # with self.subTest(msg="test solution"):
-                #     assert np.allclose(ref_solution, vqls_solution, atol=1E-1, rtol=1E-1)
 
 
     def test_circuit_input_statevector(self):
@@ -129,10 +119,6 @@ class TestVQLS(QiskitTestCase):
             coefficients = [0.5, 0.5]
         )
 
-        np_matrix = matrix.recompose(matrix.coefficients, matrix.unitary_matrices )
-        np_rhs = Operator(rhs).data @ np.array([1,0,0,0])
-
-        # classical_solution = NumPyLinearSolver().solve(np_matrix, np_rhs/np.linalg.norm(np_rhs))
         for estimator, sampler in  zip(self.estimators, self.samplers):
             for opt in self.options:
                 vqls = VQLS(
@@ -142,13 +128,8 @@ class TestVQLS(QiskitTestCase):
                     sampler=sampler,
                     callback=self.log.update
                 )
-                res = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs, opt)
+                _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs, opt)
 
-                # ref_solution = np.abs(classical_solution.state / np.linalg.norm(classical_solution.state))
-                # vqls_solution = np.abs(np.real(Statevector(res.state).data))
-                
-                # with self.subTest(msg="test solution"):
-                #     assert np.allclose(ref_solution, vqls_solution, atol=1E-1, rtol=1E-1)
 
 
 if __name__ == "__main__":
