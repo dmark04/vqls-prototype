@@ -19,7 +19,7 @@ class HadammardTest:
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
     ) :
-        r"""Create the quantum circuits required to compute the hadamard test:
+        """Create the quantum circuits required to compute the hadamard test:
 
         .. math::
 
