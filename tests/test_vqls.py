@@ -22,12 +22,12 @@ from qiskit import BasicAer, QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.utils import algorithm_globals, has_aer
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-from qalcore.qiskit.vqls.numpy_unitary_matrices import UnitaryDecomposition
+from vqls_prototype import SymmetricDecomposition
 
 from qiskit.quantum_info import Operator
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
-from qalcore.qiskit.vqls import VQLS, VQLSLog
+from vqls_prototype import VQLS, VQLSLog
 
 if has_aer():
     from qiskit import Aer

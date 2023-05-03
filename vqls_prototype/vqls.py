@@ -8,31 +8,25 @@
 See https://arxiv.org/abs/1909.05820
 """
 
+
+from dataclasses import dataclass
 from typing import Optional, Union, List, Callable, Dict
 import numpy as np
-from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-from qiskit import Aer
+
 from qiskit import QuantumCircuit
+from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit.algorithms.variational_algorithm import VariationalAlgorithm
 from qiskit.utils.validation import validate_min
-from qiskit.algorithms.minimum_eigen_solvers.vqe import (
-    _validate_bounds,
-    _validate_initial_point,
-)
+from qiskit.algorithms.minimum_eigen_solvers.vqe import _validate_bounds,_validate_initial_point
+from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 
-from qiskit.opflow import (
-    CircuitSampler
-)
-from qiskit.algorithms.optimizers import SLSQP, Minimizer, Optimizer
+from qiskit.algorithms.optimizers import Minimizer, Optimizer
 from qiskit.opflow.gradients import GradientBase
-from qalcore.qiskit.vqls.variational_linear_solver import (
-    VariationalLinearSolver,
-    VariationalLinearSolverResult,
-)
-from qalcore.qiskit.vqls.numpy_unitary_matrices import UnitaryDecomposition
-from qalcore.qiskit.vqls.hadamard_test import HadammardTest, HadammardOverlapTest
-from qiskit.primitives import BaseEstimator, BaseSampler
-from dataclasses import dataclass
+
+from .variational_linear_solver import VariationalLinearSolver,VariationalLinearSolverResult
+from .matrix_decomposition import SymmetricDecomposition, MatrixDecomposition, PauliDecomposition
+from .hadamard_test import HadammardTest, HadammardOverlapTest
+
 
 @dataclass
 class VQLSLog:
@@ -55,39 +49,61 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         .. jupyter-execute:
 
-            from qalcore.qiskit.vqls import VQLS
+            from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
             from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-            from qiskit.algorithms.optimizers import COBYLA
-            from qiskit.algorithms.linear_solvers.numpy_linear_solver import NumPyLinearSolver
-            from qiskit import Aer
+            from qiskit.algorithms import optimizers as opt
+            from qiskit import Aer, BasicAer
             import numpy as np
 
-            # define the matrix and the rhs
-            matrix = np.random.rand(4,4)
-            matrix = (matrix + matrix.T)
-            rhs = np.random.rand(4)
+            from qiskit.quantum_info import Statevector
+            import matplotlib.pyplot as plt
+            from qiskit.primitives import Estimator, Sampler, BackendEstimator
 
-            # number of qubits needed
-            num_qubits = int(log2(A.shape[0]))
+            # create random symmetric matrix
+            A = np.random.rand(4, 4)
+            A = A + A.T
 
-            # get the classical solution
-            classical_solution = NumPyLinearSolver().solve(matrix,rhs/np.linalg.norm(rhs))
+            # create rhight hand side
+            b = np.random.rand(4)
 
-            # specify the backend
-            backend = Aer.get_backend('aer_simulator_statevector')
+            # solve using numpy
+            classical_solution = np.linalg.solve(A, b / np.linalg.norm(b))
+            ref_solution = classical_solution / np.linalg.norm(classical_solution)
 
-            # specify the ansatz
-            ansatz = RealAmplitudes(num_qubits, entanglement='full', reps=3, insert_barriers=False)
+            # define the wave function ansatz
+            ansatz = RealAmplitudes(2, entanglement="full", reps=3, insert_barriers=False)
 
-            # declare the solver
-            vqls  = VQLS(
-                ansatz=ansatz,
-                optimizer=COBYLA(maxiter=200, disp=True),
-                quantum_instance=backend
+            # define backend
+            backend = BasicAer.get_backend("statevector_simulator")
+            
+            # define an estimator primitive
+            estimator = Estimator()
+    
+            # define the logger
+            log = VQLSLog([],[])
+
+            # create the solver
+            vqls = VQLS(
+                estimator,
+                ansatz,
+                opt.CG(maxiter=200),
+                callback=log.update
             )
 
-            # solve the system
-            solution = vqls.solve(matrix,rhs)
+            # solve 
+            res = vqls.solve(A, b, opt)
+            vqls_solution = np.real(Statevector(res.state).data)
+
+            # plot solution
+            plt.scatter(ref_solution, vqls_solution)
+            plt.plot([-1, 1], [-1, 1], "--")
+            plt.show()
+
+            # plot cost function 
+            plt.plot(log.values)
+            plt.ylabel('Cost Function')
+            plt.xlabel('Iterations')
+            plt.show()
 
     References:
 
@@ -110,11 +126,13 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
     ) -> None:
         r"""
         Args:
-            esitmator: Estimator primitive to compute the expetation value of the circuits
+            estimator: an Estimator primitive to compute the expected values of the 
+                quantum circuits needed for the cost function
             ansatz: A parameterized circuit used as Ansatz for the wave function.
             optimizer: A classical optimizer. Can either be a Qiskit optimizer or a callable
                 that takes an array as input and returns a Qiskit or SciPy optimization result.
-            sampler: Sampler primitive to sample the output of the Overal Hadammard tests
+            sampler: a Sampler primitive to sample the output of some quantum circuits needed to
+                compute the cost function. This is only needed if overal Hadammard tests are used.
             initial_point: An optional initial point (i.e. initial parameter values)
                 for the optimizer. If ``None`` then VQLS will look to the ansatz for a preferred
                 point and if not will simply compute a random one.
@@ -136,8 +154,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         validate_min("max_evals_grouped", max_evals_grouped, 1)
 
         self._num_qubits = None
-
         self._max_evals_grouped = max_evals_grouped
+    
         self.estimator = estimator
         self.sampler = sampler
         self.ansatz = ansatz
@@ -156,11 +174,10 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         self.vector_circuit = None
         self.matrix_circuits = None
-        self.num_hdr = None
-        self.observable = None
 
         self.default_solve_options = {"use_overlap_test": False,
-                                      "use_local_cost_function": False}
+                                      "use_local_cost_function": False,
+                                      "matrix_decomposition": "symmetric"}
 
     @property
     def num_qubits(self) -> int:
@@ -245,11 +262,9 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """Sets the optimizer attribute.
 
         Args:
-            optimizer: The optimizer to be used. If None is passed, SLSQP is used by default.
+            optimizer: The optimizer to be used.
 
         """
-        if optimizer is None:
-            optimizer = SLSQP()
 
         if isinstance(optimizer, Optimizer):
             optimizer.set_max_evals_grouped(self.max_evals_grouped)
@@ -267,7 +282,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         Args:
             matrix (Union[np.ndarray, QuantumCircuit, List]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of thge linear system
-            options (Dict): dicitonary of options
+            options (Dict): Options to compute define the quantum circuits that compute the cost function 
 
         Raises:
             ValueError: if vector and matrix have different size
@@ -311,7 +326,9 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                     + ". Matrix dimension: "
                     + str(matrix.shape[0])
                 )
-            self.matrix_circuits = UnitaryDecomposition(matrix=matrix)
+            decomposition = {"pauli": PauliDecomposition,
+                             "symmetric": SymmetricDecomposition} [options["matrix_decomposition"]]
+            self.matrix_circuits = decomposition(matrix=matrix)
 
         # a single circuit
         elif isinstance(matrix, QuantumCircuit):
@@ -319,12 +336,13 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 raise ValueError(
                     "Matrix and vector circuits have different numbers of qubits."
                 )
-            self.matrix_circuits = UnitaryDecomposition(circuits=matrix)
+            self.matrix_circuits = MatrixDecomposition(circuits=matrix)
 
+        # if its a list of (coefficients, circuits)
         elif isinstance(matrix, List):
             assert isinstance(matrix[0][0], (float, complex))
             assert isinstance(matrix[0][1], QuantumCircuit)
-            self.matrix_circuits = UnitaryDecomposition(
+            self.matrix_circuits = MatrixDecomposition(
                 circuits=[m[1] for m in matrix], coefficients=[m[0] for m in matrix]
             )
 
@@ -372,7 +390,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """construct the circuits needed for the local cost function
 
         Returns:
-            List[QuantumCircuit]: quantum circuit for the local cost function
+            List[QuantumCircuit]: quantum circuits for the local cost function
         """
 
         hdmr_tests_overlap = []
@@ -410,13 +428,10 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """construct circuits needed for the global cost function
 
         Args:
-            appply_explicit_measurement (bool): _description_
-
-        Raises:
-            RuntimeError: _description_
+            options (Dict): Options to define the quantum circuits that compute the cost function
 
         Returns:
-            List[QuantumCircuit]: _description_
+            List[QuantumCircuit]: quantum circuits needed for the global cost function
         """
 
         hdmr_tests_overlap = []
@@ -463,10 +478,13 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         coefficient_matrix: np.ndarray,
         options: Dict
     ) -> float:
-        r"""Compute the final cost function from the output of the different circuits
+        """Computes the value of the cost function
 
         Args:
-            probabiliy_circuit_output (List): expected values of the different circuits
+            hdmr_values_norm (np.ndarray): values of the hadamard test for the norm
+            hdmr_values_overlap (np.ndarray): values of the hadamard tests for the overlap
+            coefficient_matrix (np.ndarray): exapnsion coefficients of the matrix
+            options (Dict): options to compute cost function
 
         Returns:
             float: value of the cost function
@@ -495,14 +513,14 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         cost = 1.0 - np.real(sum_terms / norm)
 
         # print("Cost function %f" % cost)
-        return cost
+        return cost 
 
     def _compute_normalization_term(
         self,
         coeff_matrix: np.ndarray,
         hdmr_values: np.ndarray,
     ) -> float:
-        r"""Compute <phi|phi>
+        """Compute <phi|phi>
 
         .. math::
             \\langle\\Phi|\\Phi\\rangle = \\sum_{nm} c_n^*c_m \\langle 0|V^* U_n^* U_m V|0\\rangle
@@ -547,6 +565,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         Args:
             coeff_matrix (np.ndarray): the matrix values of the c_n^* c_m coefficients
             hdmr_values (List): values of the circuit outputs
+            options (Dict): options to compute cost function
 
         Returns:
             float: value of the sum
@@ -591,6 +610,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         Args:
             coeff_matrix (np.ndarray): the matrix values of the c_n^* c_m coefficients
             hdmr_values (List): values of the circuit outputs
+            norm (float): value of the norm term
 
         Returns:
             float: value of the sum
@@ -635,7 +655,10 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """Generate the cost function of the minimazation process
 
         Args:
-            circuits (List[QuantumCircuit]): circuits necessary to compute the cost function
+            hdmr_tests_norm (List): list of quantum circuits needed to compute the norm
+            hdmr_tests_overlap (List): list of quantum circuits needed to compute the norm
+            coefficient_matrix (np.ndarray): the matrix values of the c_n^* c_m coefficients
+            options (Dict): Option to compute the cost function
 
         Raises:
             RuntimeError: If the ansatz is not parametrizable
@@ -705,6 +728,10 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         if options["use_overlap_test"] and self.sampler is None:
             raise ValueError("Please provide a sampler primitives when using Hadamard Overlap test")
+        
+        valid_matrix_decomposition = ["symmetric", "pauli"]
+        if options["matrix_decomposition"].lower() not in valid_matrix_decomposition:
+            raise ValueError("matrix decomposition {k} not recognized, valid keys are {valid_matrix_decomposition}")
 
         return options 
 
@@ -712,23 +739,14 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
         vector: Union[np.ndarray, QuantumCircuit],
-        options: Union[Dict, None],
+        options: Union[Dict, None] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the linear system
 
         Args:
             matrix (Union[List, np.ndarray, QuantumCircuit]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of the linear system
-            observable: Optional information to be extracted from the solution.
-                Default is `None`.
-            observable_circuit: Optional circuit to be applied to the solution to extract
-                information. Default is `None`.
-            post_processing: Optional function to compute the value of the observable.
-                Default is the raw value of measuring the observable.
-
-        Raises:
-            ValueError: If an invalid combination of observable, observable_circuit and
-                post_processing is passed.
+            options (Union[Dict, None]): options for the calculation of the cost function  
 
         Returns:
             VariationalLinearSolverResult: Result of the optimization and solution vector of the linear system
@@ -741,7 +759,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         hdmr_tests_norm, hdmr_tests_overlap = self.construct_circuit(matrix, vector,
                                                                      options)
 
-        # compute the coefficient matrix 
+        # compute he coefficient matrix 
         coefficient_matrix = self.get_coefficient_matrix(np.array([mi.coeff for mi in self.matrix_circuits]))
 
         # set an expectation for this algorithm run (will be reset to None at the end)

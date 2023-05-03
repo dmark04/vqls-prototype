@@ -3,9 +3,8 @@
 from typing import Optional, List, Union
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.algorithms.exceptions import AlgorithmError
-from qiskit.opflow import Z, I, TensoredOp, StateFn, ListOp
+from qiskit.opflow import Z, I, TensoredOp
 from qiskit.quantum_info import SparsePauliOp
-from qiskit.circuit import Parameter
 import numpy as np 
 
 class HadammardTest:
@@ -19,7 +18,7 @@ class HadammardTest:
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
     ) :
-        """Create the quantum circuits required to compute the hadamard test:
+        r"""Create the quantum circuits required to compute the hadamard test:
 
         .. math::
 
@@ -107,8 +106,9 @@ class HadammardTest:
                 qc = QuantumCircuit(self.num_qubits)
 
             if apply_initial_state is not None:
-                qc.compose(
-                    apply_initial_state, list(range(1, self.num_qubits)), inplace=True
+                qc.append(
+                    apply_initial_state, 
+                    list(range(1, self.num_qubits))
                 )
 
             if use_barrier:
@@ -127,13 +127,12 @@ class HadammardTest:
             # matrix circuit
             for op, ctrl in zip(operators, apply_control_to_operator):
                 if ctrl:
-                    qc.compose(
+                    qc.append(
                         op.control(1),
-                        qubits=list(range(0, self.num_qubits)),
-                        inplace=True,
+                        list(range(0, self.num_qubits))
                     )
                 else:
-                    qc.compose(op, qubits=list(range(0, self.num_qubits)), inplace=True)
+                    qc.append(op, list(range(0, self.num_qubits)))
             if use_barrier:
                 qc.barrier()
 
@@ -154,9 +153,10 @@ class HadammardTest:
         Returns:
             Lis[TensoredOp]: List of two observables to measure |1> on the control qubit I^...^I^|1><1|
         """
+
         p0 = "I" * self.num_qubits
         p1 = "I" * (self.num_qubits-1) + "Z"
-        one_op_ctrl = SparsePauliOp([p0,p1], np.array([0.5, -0.5]))
+        one_op_ctrl = SparsePauliOp([p0,p1], np.array([0.5 +0.0j, -0.5 +0.0j]))
         return one_op_ctrl
 
     def get_value(self, estimator, parameter_sets: List) -> List:
@@ -267,23 +267,23 @@ class HadammardOverlapTest:
 
             # prepare psi on the first register
             if apply_initial_state is not None:
-                qc.compose(
-                    apply_initial_state, qreg0, inplace=True
+                qc.append(
+                    apply_initial_state, qreg0
                 )
 
             # apply U on the second register
-            qc.compose(U, qreg1, inplace=True)
+            qc.append(U, qreg1)
 
             if use_barrier:
                 qc.barrier()
 
             # apply Al on the first qreg
             idx = [0] + list(range(1,Al.num_qubits+1))
-            qc.compose(Al.control(1), idx, inplace=True)
+            qc.append(Al.control(1), idx)
 
             # apply Am^\dagger on the second reg
             idx = [0] + list(range(Al.num_qubits+1,2*Al.num_qubits+1))
-            qc.compose(Am.inverse().control(1), idx, inplace=True)
+            qc.append(Am.inverse().control(1), idx)
 
             if use_barrier:
                 qc.barrier()
@@ -346,8 +346,25 @@ class HadammardOverlapTest:
 
 
     def get_value(self, sampler, parameter_sets: List) -> float:
+        """Compute and return the value of Hadmard overlap test
+
+        Args:
+            sampler (Sampler): a Sampler primitive to extract the output of the circuits
+            parameter_sets (List): the parameters of the variational circuits
+
+        Returns:
+            float: value of the overlap hadammard test
+        """
 
         def post_processing(sampler_result) -> List:
+            """Post process the sampled values of the circuits
+
+            Args:
+                sampler_result (results): Result of the sampler
+
+            Returns:
+                List: value of the overlap hadammard test
+            """
             
             quasi_dist = sampler_result.quasi_dists
             output = []
