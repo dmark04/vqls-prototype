@@ -305,7 +305,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
             # create the circuit
             nb = int(np.log2(len(vector)))
-            self.vector_circuit = QuantumCircuit(nb)
+            self.vector_circuit = QuantumCircuit(nb, name='Ub')
 
             # prep the vector if its norm is non nul
             vec_norm = np.linalg.norm(vector)

@@ -189,7 +189,7 @@ class SymmetricDecomposition(MatrixDecomposition):
     recompose : Rebuilds the original matrix from the decomposed one.
     """
 
-    def _create_circuits(self, unimatrices: List[np.ndarray]) -> List[QuantumCircuit]:
+    def _create_circuits(self, unimatrices: List[np.ndarray], names: List[str]) -> List[QuantumCircuit]:
         """Construct the quantum circuits.
 
         Parameters
@@ -203,12 +203,12 @@ class SymmetricDecomposition(MatrixDecomposition):
             list of resulting quantum circuits.
         """
 
-        def make_qc(mat: complex_arr_t) -> QuantumCircuit:
-            qc = QuantumCircuit(self.num_qubits)
+        def make_qc(mat: complex_arr_t, name: str) -> QuantumCircuit:
+            qc = QuantumCircuit(self.num_qubits, name=name)
             qc.unitary(mat, qc.qubits)
             return qc
 
-        return [make_qc(mat) for mat in unimatrices]
+        return [make_qc(mat, name) for mat, name in zip(unimatrices, names)]
 
 
     @staticmethod
@@ -279,7 +279,8 @@ class SymmetricDecomposition(MatrixDecomposition):
         unit_coeffs = np.array(unitary_coefficients, dtype=np.cdouble)
 
         # create the circuits
-        circuits = self._create_circuits(unitary_matrices)
+        names = ['A+','A-']
+        circuits = self._create_circuits(unitary_matrices, names)
 
         return unit_coeffs, unitary_matrices, circuits
 
@@ -316,7 +317,7 @@ class PauliDecomposition(MatrixDecomposition):
             QuantumCircuit: quantum circuit for the string 
         """
         num_qubit = len(pauli_string)
-        qc = QuantumCircuit(num_qubit)
+        qc = QuantumCircuit(num_qubit,name=pauli_string)
         for iqbit, gate in enumerate(pauli_string[::-1]):
             qc.__getattribute__(gate.lower())(iqbit)
         return qc
