@@ -24,7 +24,6 @@ from qiskit.utils import algorithm_globals, has_aer
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 from vqls_prototype import SymmetricDecomposition
 
-from qiskit.quantum_info import Operator
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
 from vqls_prototype import VQLS, VQLSLog
@@ -114,7 +113,7 @@ class TestVQLS(QiskitTestCase):
         qc2.x(1)
         qc2.cnot(0,1)
 
-        matrix = UnitaryDecomposition(
+        matrix = SymmetricDecomposition(
             circuits = [qc1, qc2],
             coefficients = [0.5, 0.5]
         )
