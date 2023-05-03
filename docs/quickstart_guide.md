@@ -4,8 +4,21 @@ The quickstart guide is similar to the beginner's guide. The key difference is t
 
 ## Installation
 
-Explain to the user how to install dependencies and the quantum prototype. It is likely best to just link to the installation guide here.
+```
+git clone https://github.com/QuantumApplicationLab/vqls_prototype
+cd vqls_prototype
+pip install -e .
+```
 
 ## Usage
 
-Demonstrate the API usage here. Since the user is assumed to have some background on the software capabilities, more detailed/advanced usage can be provided here than in the beginner's guide.
+The code is organized very similarly as the VQE class. Hence users may simply instantiate the VQLS class and run the otpimization
+
+```python
+from qalcore.qiskit.vqls.vqls import VQLS
+from qiskit.primitives import Estimator 
+
+estimator = Estimator()
+vqls = VQLS(estimator, ansatz, COBYLA(maxiter=2, disp=True))
+res = vqls.solve(A, b)
+``` 
