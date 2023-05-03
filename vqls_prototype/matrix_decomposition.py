@@ -319,7 +319,8 @@ class PauliDecomposition(MatrixDecomposition):
         num_qubit = len(pauli_string)
         qc = QuantumCircuit(num_qubit,name=pauli_string)
         for iqbit, gate in enumerate(pauli_string[::-1]):
-            qc.__getattribute__(gate.lower())(iqbit)
+            if gate.upper()!='I': # identity gate cannot be controlled by ancillary qubit
+                qc.__getattribute__(gate.lower())(iqbit)
         return qc
 
     def decompose_matrix(self) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
