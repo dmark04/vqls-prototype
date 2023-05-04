@@ -12,7 +12,6 @@ See https://arxiv.org/abs/1909.05820
 from dataclasses import dataclass
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
-import numpy.typing as npt
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -474,21 +473,21 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                     )
             return hdmr_overlap_tests
 
-        else:
-            hdmr_tests = []
-            for mat_i in self.matrix_circuits:
-                hdmr_tests.append(
-                    HadammardTest(
-                        operators=[
-                            self.ansatz,
-                            mat_i.circuit,
-                            self.vector_circuit.inverse(),
-                        ],
-                        apply_measurement=False,
-                    )
+        # or using the normal Hadamard tests
+        hdmr_tests = []
+        for mat_i in self.matrix_circuits:
+            hdmr_tests.append(
+                HadammardTest(
+                    operators=[
+                        self.ansatz,
+                        mat_i.circuit,
+                        self.vector_circuit.inverse(),
+                    ],
+                    apply_measurement=False,
                 )
+            )
 
-            return hdmr_tests
+        return hdmr_tests
 
     @staticmethod
     def get_coefficient_matrix(coeffs) -> np.ndarray:
