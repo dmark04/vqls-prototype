@@ -1,7 +1,7 @@
 certifi>=2021.5.30
 importlib_metadata>=4.8.1
 qiskit-aer>=0.12.0
-qiskit-terra>=0.23.0
+qiskit-terra>=0.23.1
 ipykernel>=6.15.0
 matplotlib>=3.5.3
 pylatexenc>=2.10
