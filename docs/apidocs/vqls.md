@@ -42,37 +42,49 @@ update(count, cost, parameters)
 Systems of linear equations arise naturally in many real-life applications in a wide range of areas, such as in the solution of Partial Differential Equations, the calibration of financial models, fluid simulation or numerical field calculation. The problem can be defined as, given a matrix :math:`A\in\mathbb{C}^{N\times N}` and a vector :math:`\vec{b}\in\mathbb{C}^{N}`, find :math:`\vec{x}\in\mathbb{C}^{N}` satisfying :math:`A\vec{x}=\vec{b}`. 
 
 
+```python
+ from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog  
+ from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes  
+ from qiskit.algorithms import optimizers as opt  
+ from qiskit import Aer, BasicAer  
+ import numpy as np 
 
-**Examples:**
- 
+ from qiskit.quantum_info import Statevector  
+ import matplotlib.pyplot as plt  f
+ rom qiskit.primitives import Estimator, Sampler, BackendEstimator 
 
- .. jupyter-execute: 
+ # create random symmetric matrix  
+ A = np.random.rand(4, 4)  A = A + A.T 
 
- from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog  from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes  from qiskit.algorithms import optimizers as opt  from qiskit import Aer, BasicAer  import numpy as np 
+ # create rhight hand side  
+ b = np.random.rand(4) 
 
- from qiskit.quantum_info import Statevector  import matplotlib.pyplot as plt  from qiskit.primitives import Estimator, Sampler, BackendEstimator 
+ # solve using numpy  
+ classical_solution = np.linalg.solve(A, b / np.linalg.norm(b))  
+ ref_solution = classical_solution / np.linalg.norm(classical_solution) 
 
- # create random symmetric matrix  A = np.random.rand(4, 4)  A = A + A.T 
+ # define the wave function ansatz  
+ ansatz = RealAmplitudes(2, entanglement="full", reps=3, insert_barriers=False) 
 
- # create rhight hand side  b = np.random.rand(4) 
+ # define an estimator primitive  
+ estimator = Estimator() 
 
- # solve using numpy  classical_solution = np.linalg.solve(A, b / np.linalg.norm(b))  ref_solution = classical_solution / np.linalg.norm(classical_solution) 
+ # define the logger  
+ log = VQLSLog([],[]) 
 
- # define the wave function ansatz  ansatz = RealAmplitudes(2, entanglement="full", reps=3, insert_barriers=False) 
+ # create the solver  
+ vqls = VQLS(  estimator,  ansatz,  opt.CG(maxiter=200),  callback=log.update  ) 
 
- # define backend  backend = BasicAer.get_backend("statevector_simulator")  
+ # solve   
+ res = vqls.solve(A, b, opt)  vqls_solution = np.real(Statevector(res.state).data) 
 
- # define an estimator primitive  estimator = Estimator() 
+ # plot solution  
+ plt.scatter(ref_solution, vqls_solution)  plt.plot([-1, 1], [-1, 1], "--")  plt.show() 
 
- # define the logger  log = VQLSLog([],[]) 
+ # plot cost function   
+ plt.plot(log.values)  plt.ylabel('Cost Function')  plt.xlabel('Iterations')  plt.show() 
 
- # create the solver  vqls = VQLS(  estimator,  ansatz,  opt.CG(maxiter=200),  callback=log.update  ) 
-
- # solve   res = vqls.solve(A, b, opt)  vqls_solution = np.real(Statevector(res.state).data) 
-
- # plot solution  plt.scatter(ref_solution, vqls_solution)  plt.plot([-1, 1], [-1, 1], "--")  plt.show() 
-
- # plot cost function   plt.plot(log.values)  plt.ylabel('Cost Function')  plt.xlabel('Iterations')  plt.show() 
+ ```
 
 References: 
 
