@@ -26,11 +26,16 @@ class HadammardTest:
             \\langle \\Psi | U | \\Psi \\rangle
 
         Args:
-            operators (Union[QuantumCircuit, List[QuantumCircuit]]): quantum circuit or list of quantum circuits representing the U.
-            use_barrier (Optional[bool], optional): introduce barriers in the description of the circuits.  Defaults to False.
-            apply_control_to_operator (Optional[bool], optional): Apply control operator to the input quantum circuits. Defaults to True.
-            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create |Psi> from |0>. If None, assume that the qubits are alredy in Psi.
-            apply_measurement (Optional[bool], optional): apply explicit measurement. Defaults to False.
+            operators (Union[QuantumCircuit, List[QuantumCircuit]]): quantum circuit or
+                list of quantum circuits representing the U.
+            use_barrier (Optional[bool], optional): introduce barriers in the
+                description of the circuits. Defaults to False.
+            apply_control_to_operator (Optional[bool], optional): Apply control operator to the
+                input quantum circuits. Defaults to True.
+            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create
+                |Psi> from |0>. If None, assume that the qubits are alredy in Psi.
+            apply_measurement (Optional[bool], optional): apply explicit measurement.
+                Defaults to False.
 
         """
 
@@ -45,14 +50,16 @@ class HadammardTest:
             if apply_initial_state is not None:
                 if apply_initial_state.num_qubits != operators[0].num_qubits:
                     raise ValueError(
-                        "The operator and the initial state circuits have different numbers of qubits"
+                        "The operator and the initial state circuits \
+                            have different numbers of qubits"
                     )
         else:
             self.num_qubits = operators[0].num_qubits
             if apply_initial_state is not None:
                 if apply_initial_state.num_qubits != operators[0].num_qubits - 1:
                     raise ValueError(
-                        "The operator and the initial state circuits have different numbers of qubits"
+                        "The operator and the initial state circuits \
+                            have different numbers of qubits"
                     )
 
         # classical bit for explicit measurement
@@ -87,11 +94,16 @@ class HadammardTest:
         """build the quantum circuits
 
         Args:
-            operators (List[QuantumCircuit]): quantum circuit or list of quantum circuits representing the U.
+            operators (List[QuantumCircuit]): quantum circuit or list of quantum circuits
+                representing the U.
             use_barrier (bool): introduce barriers in the description of the circuits.
-            apply_control_to_operator (bool): Apply control operator to the input quantum circuits.
-            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create |Psi> from |0>. If None, assume that the qubits are alredy in Psi.  Defaults to None.
-            apply_measurement (Optional[bool], optional): apply explicit measurement. Defaults to False.
+            apply_control_to_operator (bool): Apply control operator to the
+                input quantum circuits.
+            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to
+                create |Psi> from |0>. If None, assume that the qubits are alredy in Psi.
+                Defaults to None.
+            apply_measurement (Optional[bool], optional): apply explicit measurement.
+                Defaults to False.
 
         Returns:
             List[QuantumCircuit]: List of quamtum circuits required to compute the Hadammard Test.
@@ -100,43 +112,43 @@ class HadammardTest:
 
         for imaginary in [False, True]:
             if apply_measurement:
-                qc = QuantumCircuit(self.num_qubits, self.num_clbits)
+                circuit = QuantumCircuit(self.num_qubits, self.num_clbits)
             else:
-                qc = QuantumCircuit(self.num_qubits)
+                circuit = QuantumCircuit(self.num_qubits)
 
             if apply_initial_state is not None:
-                qc.append(apply_initial_state, list(range(1, self.num_qubits)))
+                circuit.append(apply_initial_state, list(range(1, self.num_qubits)))
 
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # hadadmard gate on ctrl qbit
-            qc.h(0)
+            circuit.h(0)
 
             # Sdg on ctrl qbit
             if imaginary:
-                qc.sdg(0)
+                circuit.sdg(0)
 
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # matrix circuit
-            for op, ctrl in zip(operators, apply_control_to_operator):
+            for operator, ctrl in zip(operators, apply_control_to_operator):
                 if ctrl:
-                    qc.append(op.control(1), list(range(0, self.num_qubits)))
+                    circuit.append(operator.control(1), list(range(0, self.num_qubits)))
                 else:
-                    qc.append(op, list(range(0, self.num_qubits)))
+                    circuit.append(operator, list(range(0, self.num_qubits)))
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # hadamard on ctrl circuit
-            qc.h(0)
+            circuit.h(0)
 
             # measure
             if apply_measurement:
-                qc.measure(0, 0)
+                circuit.measure(0, 0)
 
-            circuits.append(qc)
+            circuits.append(circuit)
 
         return circuits
 
@@ -144,12 +156,15 @@ class HadammardTest:
         """Create the operator to measure |1> on the control qubit.
 
         Returns:
-            Lis[TensoredOp]: List of two observables to measure |1> on the control qubit I^...^I^|1><1|
+            Lis[TensoredOp]: List of two observables to measure
+                |1> on the control qubit I^...^I^|1><1|
         """
 
-        p0 = "I" * self.num_qubits
-        p1 = "I" * (self.num_qubits - 1) + "Z"
-        one_op_ctrl = SparsePauliOp([p0, p1], np.array([0.5 + 0.0j, -0.5 + 0.0j]))
+        proba_0 = "I" * self.num_qubits
+        proba_1 = "I" * (self.num_qubits - 1) + "Z"
+        one_op_ctrl = SparsePauliOp(
+            [proba_0, proba_1], np.array([0.5 + 0.0j, -0.5 + 0.0j])
+        )
         return one_op_ctrl
 
     def get_value(self, estimator, parameter_sets: List) -> List:
@@ -192,10 +207,15 @@ class HadammardOverlapTest:
             \\langle 0 | U^\dagger A_l V | 0 \\rangle \\langle V^\dagger A_m^\dagger U | 0 \\rangle
 
         Args:
-            operators (List[QuantumCircuit]): List of quantum circuits representing the operators [U, A_l, A_m].
-            use_barrier (Optional[bool], optional): introduce barriers in the description of the circuits.  Defaults to False.
-            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create |Psi> from |0>. If None, assume that the qubits of the firsr register are alredy in Psi.
-            apply_measurement (Optional[bool], optional): apply explicit measurement. Defaults to False.
+            operators (List[QuantumCircuit]): List of quantum circuits representing
+                the operators [U, A_l, A_m].
+            use_barrier (Optional[bool], optional): introduce barriers in the
+                description of the circuits.  Defaults to False.
+            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create
+                |Psi> from |0>. If None, assume that the qubits of the firsr
+                register are alredy in Psi.
+            apply_measurement (Optional[bool], optional): apply explicit measurement.
+                Defaults to False.
 
         Returns:
             List[QuantumCircuit]: List of quamtum circuits required to compute the Hadammard Test.
@@ -239,69 +259,73 @@ class HadammardOverlapTest:
         """build the quantum circuits
 
         Args:
-            operators (List[QuantumCircuit]): quantum circuit or list of quantum circuits representing the [U, Al, Am].
+            operators (List[QuantumCircuit]): quantum circuit or list of quantum circuits
+                representing the [U, Al, Am].
             use_barrier (bool): introduce barriers in the description of the circuits.
-            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create |Psi> from |0>. If None, assume that the qubits are alredy in Psi.  Defaults to None.
-            apply_measurement (Optional[bool], optional): apply explicit measurement. Defaults to False.
+            apply_initial_state (Optional[QuantumCircuit], optional): Quantum Circuit to create
+                |Psi> from |0>. If None, assume that the qubits are alredy in Psi.
+                Defaults to None.
+            apply_measurement (Optional[bool], optional): apply explicit measurement.
+                Defaults to False.
 
         Returns:
             List[QuantumCircuit]: List of quamtum circuits required to compute the Hadammard Test.
         """
 
         circuits = []
-        U, Al, Am = operators
+        op_umat, op_al, op_am = operators
 
         for imaginary in [False, True]:
             qctrl = QuantumRegister(1, "qctrl")
-            qreg0 = QuantumRegister(Al.num_qubits, "qr0")
-            qreg1 = QuantumRegister(Am.num_qubits, "qr1")
-            qc = QuantumCircuit(qctrl, qreg0, qreg1)
+            qreg0 = QuantumRegister(op_al.num_qubits, "qr0")
+            qreg1 = QuantumRegister(op_am.num_qubits, "qr1")
+            circuit = QuantumCircuit(qctrl, qreg0, qreg1)
 
             # hadadmard gate on ctrl qbit
-            qc.h(qctrl)
+            circuit.h(qctrl)
 
             # prepare psi on the first register
             if apply_initial_state is not None:
-                qc.append(apply_initial_state, qreg0)
+                circuit.append(apply_initial_state, qreg0)
 
             # apply U on the second register
-            qc.append(U, qreg1)
+            circuit.append(op_umat, qreg1)
 
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # apply Al on the first qreg
-            idx = [0] + list(range(1, Al.num_qubits + 1))
-            qc.append(Al.control(1), idx)
+            idx = [0] + list(range(1, op_al.num_qubits + 1))
+            circuit.append(op_al.control(1), idx)
 
             # apply Am^\dagger on the second reg
-            idx = [0] + list(range(Al.num_qubits + 1, 2 * Al.num_qubits + 1))
-            qc.append(Am.inverse().control(1), idx)
+            idx = [0] + list(range(op_al.num_qubits + 1, 2 * op_al.num_qubits + 1))
+            circuit.append(op_am.inverse().control(1), idx)
 
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # apply the cnot gate
-            for q0, q1 in zip(qreg0, qreg1):
-                qc.cx(q0, q1)
+            for qubit_0, qubit_1 in zip(qreg0, qreg1):
+                circuit.cx(qubit_0, qubit_1)
 
             # Sdg on ctrl qbit
             if imaginary:
-                qc.rz(-np.pi / 2, qctrl)
+                circuit.rz(-np.pi / 2, qctrl)
 
             if use_barrier:
-                qc.barrier()
+                circuit.barrier()
 
             # hadamard on ctrl circuit
-            qc.h(qctrl)
-            for q0 in qreg0:
-                qc.h(q0)
+            circuit.h(qctrl)
+            for qubit_0 in qreg0:
+                circuit.h(qubit_0)
 
             # measure
             if apply_measurement:
-                qc.measure_all(inplace=True)
+                circuit.measure_all(inplace=True)
 
-            circuits.append(qc)
+            circuits.append(circuit)
 
         return circuits
 
@@ -311,10 +335,10 @@ class HadammardOverlapTest:
         # compute [1,1,1,-1] \otimes n
         # these are the coefficients if the qubits of register A and B
         # are ordered as A0 B0 A1 B1 .... AN BN
-        c0 = np.array([1, 1, 1, -1])
+        coeff_0 = np.array([1, 1, 1, -1])
         coeffs = np.array([1, 1, 1, -1])
         for _ in range(1, self.operator_num_qubits):
-            coeffs = np.tensordot(coeffs, c0, axes=0).flatten()
+            coeffs = np.tensordot(coeffs, coeff_0, axes=0).flatten()
 
         # create all the possible bit strings of a single register
         bit_strings = []
@@ -359,19 +383,17 @@ class HadammardOverlapTest:
             quasi_dist = sampler_result.quasi_dists
             output = []
 
-            for qd in quasi_dist:
+            for qdist in quasi_dist:
                 # add missing keys
                 val = np.array(
-                    [qd[k] if k in qd else 0 for k in range(2**self.num_qubits)]
+                    [qdist[k] if k in qdist else 0 for k in range(2**self.num_qubits)]
                 )
-                # val = (val * val.conj())
 
-                # v0, v1 = np.array_split(val, 2)
-                v0, v1 = val[0::2], val[1::2]
-                p0 = (v0 * self.post_process_coeffs).sum()
-                p1 = (v1 * self.post_process_coeffs).sum()
+                value_0, value_1 = val[0::2], val[1::2]
+                proba_0 = (value_0 * self.post_process_coeffs).sum()
+                proba_1 = (value_1 * self.post_process_coeffs).sum()
 
-                output.append(p0 - p1)
+                output.append(proba_0 - proba_1)
 
             return output
 

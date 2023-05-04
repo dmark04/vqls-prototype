@@ -1,6 +1,6 @@
 .. vqls:
 
-.. module:: vqls
+.. module:: vqls_prototype
 
 =============================
 Template API References
@@ -9,4 +9,4 @@ Template API References
 .. toctree::
    :maxdepth: 1
 
-   vqls
+   vqls_prototype

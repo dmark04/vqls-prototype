@@ -119,8 +119,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
     References:
 
-        [1] Carlos Bravo-Prieto, Ryan LaRose, M. Cerezo, Yigit Subasi, Lukasz Cincio, Patrick J. Coles
-        Variational Quantum Linear Solver
+        [1] Carlos Bravo-Prieto, Ryan LaRose, M. Cerezo, Yigit Subasi, Lukasz Cincio,
+        Patrick J. Coles. Variational Quantum Linear Solver
         `arXiv:1909.05820 <https://arxiv.org/abs/1909.05820>`
     """
 
@@ -158,7 +158,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             callback: a callback that can access the intermediate data during the optimization.
                 Three parameter values are passed to the callback as follows during each evaluation
                 by the optimizer for its current set of parameters as it works towards the minimum.
-                These are: the evaluation count, the cost and the optimizer parameters for the ansatz
+                These are: the evaluation count, the cost and the parameters for the ansatz
         """
         super().__init__()
 
@@ -295,7 +295,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         Args:
             matrix (Union[np.ndarray, QuantumCircuit, List]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of thge linear system
-            options (Dict): Options to compute define the quantum circuits that compute the cost function
+            options (Dict): Options to compute define the quantum circuits
+                that compute the cost function
 
         Raises:
             ValueError: if vector and matrix have different size
@@ -308,7 +309,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # state preparation
         if isinstance(vector, QuantumCircuit):
-            nb = vector.num_qubits
+            nqbit = vector.num_qubits
             self.vector_circuit = vector
 
         elif isinstance(vector, np.ndarray):
@@ -316,8 +317,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             vector = vector.astype("float64")
 
             # create the circuit
-            nb = int(np.log2(len(vector)))
-            self.vector_circuit = QuantumCircuit(nb, name="Ub")
+            nqbit = int(np.log2(len(vector)))
+            self.vector_circuit = QuantumCircuit(nqbit, name="Ub")
 
             # prep the vector if its norm is non nul
             vec_norm = np.linalg.norm(vector)
@@ -386,14 +387,14 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         hdmr_tests_norm = []
 
-        for ii in range(len(self.matrix_circuits)):
-            mi = self.matrix_circuits[ii]
+        for ii_mat in range(len(self.matrix_circuits)):
+            mat_i = self.matrix_circuits[ii_mat]
 
-            for jj in range(ii + 1, len(self.matrix_circuits)):
-                mj = self.matrix_circuits[jj]
+            for jj_mat in range(ii_mat + 1, len(self.matrix_circuits)):
+                mat_j = self.matrix_circuits[jj_mat]
                 hdmr_tests_norm.append(
                     HadammardTest(
-                        operators=[mi.circuit.inverse(), mj.circuit],
+                        operators=[mat_i.circuit.inverse(), mat_j.circuit],
                         apply_initial_state=self._ansatz,
                         apply_measurement=False,
                     )
@@ -411,26 +412,26 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         num_z = self.matrix_circuits[0].circuit.num_qubits
 
         # create the circuits for <0| U^* A_l V(Zj . Ij|) V^* Am^* U|0>
-        for ii in range(len(self.matrix_circuits)):
-            mi = self.matrix_circuits[ii]
+        for ii_mat in range(len(self.matrix_circuits)):
+            mat_i = self.matrix_circuits[ii_mat]
 
-            for jj in range(ii, len(self.matrix_circuits)):
-                mj = self.matrix_circuits[jj]
+            for jj_mat in range(ii_mat, len(self.matrix_circuits)):
+                mat_j = self.matrix_circuits[jj_mat]
 
-                for iq in range(num_z):
+                for iqubit in range(num_z):
                     # circuit for the CZ operation on the iqth qubit
                     qc_z = QuantumCircuit(num_z + 1)
-                    qc_z.cz(0, iq + 1)
+                    qc_z.cz(0, iqubit + 1)
 
                     # create Hadammard circuit
                     hdmr_tests_overlap.append(
                         HadammardTest(
                             operators=[
-                                mi.circuit,
+                                mat_i.circuit,
                                 self.vector_circuit.inverse(),
                                 qc_z,
                                 self.vector_circuit,
-                                mj.circuit.inverse(),
+                                mat_j.circuit.inverse(),
                             ],
                             apply_control_to_operator=[True, True, False, True, True],
                             apply_initial_state=self.ansatz,
@@ -443,7 +444,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """construct circuits needed for the global cost function
 
         Args:
-            options (Dict): Options to define the quantum circuits that compute the cost function
+            options (Dict): Options to define the quantum circuits that compute
+                the cost function
 
         Returns:
             List[QuantumCircuit]: quantum circuits needed for the global cost function
@@ -453,26 +455,30 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         # create the circuits for <0|U^* A_l V|0\rangle\langle 0| V^* Am^* U|0>
         # either using overal test or hadammard test
         if options["use_overlap_test"]:
-            for ii in range(len(self.matrix_circuits)):
-                mi = self.matrix_circuits[ii]
+            for ii_mat in range(len(self.matrix_circuits)):
+                mat_i = self.matrix_circuits[ii_mat]
 
-                for jj in range(ii, len(self.matrix_circuits)):
-                    mj = self.matrix_circuits[jj]
+                for jj_mat in range(ii_mat, len(self.matrix_circuits)):
+                    mat_j = self.matrix_circuits[jj_mat]
 
                     hdmr_tests_overlap.append(
                         HadammardOverlapTest(
-                            operators=[self.vector_circuit, mi.circuit, mj.circuit],
+                            operators=[
+                                self.vector_circuit,
+                                mat_i.circuit,
+                                mat_j.circuit,
+                            ],
                             apply_initial_state=self.ansatz,
                             apply_measurement=True,
                         )
                     )
         else:
-            for mi in self.matrix_circuits:
+            for mat_i in self.matrix_circuits:
                 hdmr_tests_overlap.append(
                     HadammardTest(
                         operators=[
                             self.ansatz,
-                            mi.circuit,
+                            mat_i.circuit,
                             self.vector_circuit.inverse(),
                         ],
                         apply_measurement=False,
@@ -574,7 +580,13 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         """Compute |<b|phi>|^2
 
         .. math::
-            |\\langle b|\\Phi\\rangle|^2 = \\sum_{nm} c_n^*c_m \\langle 0|V^* U_n^* U_b |0 \\rangle \\langle 0|U_b^* U_m V |0\\rangle
+            |\\langle b|\\Phi\\rangle|^2 = \\sum_{nm} c_n^*c_m \\gamma_{nm}
+
+        with
+
+        .. math::
+
+            \\gamma_nm = \\langle 0|V^* U_n^* U_b |0 \\rangle \\langle 0|U_b^* U_m V |0\\rangle
 
         Args:
             coeff_matrix (np.ndarray): the matrix values of the c_n^* c_m coefficients
@@ -628,7 +640,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             float: value of the sum
         """
 
-        # add all the hadamard test values corresponding to the insertion of Z gates on the same cicuit
+        # add all the hadamard test values corresponding to the insertion
+        # of Z gates on the same cicuit
         # b_ij = \sum_n \\frac{1}{n} \\sum_n \\langle 0|V^* A_i U Z_n U^* A_j^* V|0\\rangle
         num_zgate = self.matrix_circuits[0].circuit.num_qubits
         hdmr_values = hdmr_values.reshape(-1, num_zgate).mean(1)
@@ -740,11 +753,11 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         else:
             for k in options.keys():
-                if k not in self.default_solve_options.keys():
+                if k not in valid_keys:
                     raise ValueError(
                         "Option {k} not recognized, valid keys are {valid_keys}"
                     )
-            for k in self.default_solve_options.keys():
+            for k in valid_keys:
                 if k not in options.keys():
                     options[k] = self.default_solve_options[k]
 
@@ -761,7 +774,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         valid_matrix_decomposition = ["symmetric", "pauli"]
         if options["matrix_decomposition"].lower() not in valid_matrix_decomposition:
             raise ValueError(
-                "matrix decomposition {k} not recognized, valid keys are {valid_matrix_decomposition}"
+                "matrix decomposition {k} not recognized, \
+                    valid keys are {valid_matrix_decomposition}"
             )
 
         return options
@@ -780,7 +794,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             options (Union[Dict, None]): options for the calculation of the cost function
 
         Returns:
-            VariationalLinearSolverResult: Result of the optimization and solution vector of the linear system
+            VariationalLinearSolverResult: Result of the optimization
+                and solution vector of the linear system
         """
 
         # validate the options
@@ -793,7 +808,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # compute he coefficient matrix
         coefficient_matrix = self.get_coefficient_matrix(
-            np.array([mi.coeff for mi in self.matrix_circuits])
+            np.array([mat_i.coeff for mat_i in self.matrix_circuits])
         )
 
         # set an expectation for this algorithm run (will be reset to None at the end)

@@ -13,7 +13,7 @@
 """An abstract class for variational linear systems solvers."""
 
 from abc import ABC, abstractmethod
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 import numpy as np
 
 from qiskit import QuantumCircuit
@@ -23,8 +23,9 @@ from qiskit.algorithms.variational_algorithm import VariationalResult
 class VariationalLinearSolverResult(VariationalResult):
     """A base class for linear systems results using variational methods
 
-    The  linear systems variational algorithms return an object of the type ``VariationalLinearSystemsResult``
-    with the information about the solution obtained.
+    The  linear systems variational algorithms return an object of the type
+    ``VariationalLinearSystemsResult`` with the information about the
+    solution obtained.
     """
 
     def __init__(self) -> None:
@@ -42,12 +43,14 @@ class VariationalLinearSolverResult(VariationalResult):
 
     @property
     def state(self) -> Union[QuantumCircuit, np.ndarray]:
-        """return either the circuit that prepares the solution or the solution as a vector"""
+        """return either the circuit that prepares the solution or the solution
+        as a vector"""
         return self._state
 
     @state.setter
     def state(self, state: Union[QuantumCircuit, np.ndarray]) -> None:
-        """Set the solution state as either the circuit that prepares it or as a vector.
+        """Set the solution state as either the circuit that prepares
+           it or as a vector.
 
         Args:
             state: The new solution state.
@@ -63,7 +66,7 @@ class VariationalLinearSolver(ABC):
         self,
         matrix: Union[np.ndarray, QuantumCircuit],
         vector: Union[np.ndarray, QuantumCircuit],
-        **kwargs
+        options: Union[Dict, None] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the system and compute the observable(s)
 
