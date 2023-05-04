@@ -1,7 +1,7 @@
 # VQLS Technical Docs
 
-* [matrix_decomposition](apidocs/matrix_decomposition.md)
-* [hadamard_test](apidocs/hadamard_test.md)
-* [vqls](apidocs/vqls.md)
-* [variational_linear_solver](apidocs/variational_linear_solver.md)
+* [matrix_decomposition](technical_docs/matrix_decomposition.md)
+* [hadamard_test](technical_docs/hadamard_test.md)
+* [vqls](technical_docs/vqls.md)
+* [variational_linear_solver](technical_docs/variational_linear_solver.md)
 
