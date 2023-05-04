@@ -1,4 +1,4 @@
-.. vqls:
+.. vqls_prototype:
 
 .. module:: vqls_prototype
 
