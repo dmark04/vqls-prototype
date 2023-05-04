@@ -10,8 +10,9 @@ See https://arxiv.org/abs/1909.05820
 
 
 from dataclasses import dataclass
-from typing import Optional, Union, List, Callable, Dict
+from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
+import numpy.typing as npt
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -130,8 +131,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         ansatz: QuantumCircuit,
         optimizer: Union[Optimizer, Minimizer],
         sampler: Optional[Union[BaseSampler, None]] = None,
-        initial_point: Optional[np.ndarray] = None,
-        gradient: Optional[Union[GradientBase, Callable]] = None,
+        initial_point: Optional[Union[np.ndarray, None]] = None,
+        gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
         callback: Optional[Callable[[int, np.ndarray, float, float], None]] = None,
     ) -> None:
@@ -171,20 +172,17 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         self.sampler = sampler
         self.ansatz = ansatz
         self.optimizer = optimizer
-
-        self._initial_point = None
         self.initial_point = initial_point
 
         self._gradient = None
         self.gradient = gradient
 
-        self._callback = None
         self.callback = callback
 
         self._eval_count = 0
 
-        self.vector_circuit = None
-        self.matrix_circuits = None
+        self.vector_circuit = QuantumCircuit(0)
+        self.matrix_circuits = QuantumCircuit(0)
 
         self.default_solve_options = {
             "use_overlap_test": False,
@@ -233,12 +231,12 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         self.num_qubits = ansatz.num_qubits + 1
 
     @property
-    def initial_point(self) -> Optional[np.ndarray]:
+    def initial_point(self) -> Union[np.ndarray, None]:
         """Returns initial point"""
         return self._initial_point
 
     @initial_point.setter
-    def initial_point(self, initial_point: np.ndarray):
+    def initial_point(self, initial_point: Union[np.ndarray, None]):
         """Sets initial point"""
         self._initial_point = initial_point
 
@@ -289,7 +287,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         matrix: Union[np.ndarray, QuantumCircuit, List],
         vector: Union[np.ndarray, QuantumCircuit],
         options: Dict,
-    ) -> List[QuantumCircuit]:
+    ) -> Tuple[List[QuantumCircuit], List[QuantumCircuit]]:
         """Returns the a list of circuits required to compute the expectation value
 
         Args:
@@ -300,7 +298,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         Raises:
             ValueError: if vector and matrix have different size
-            ValueError: if vector and matrix have different numner of qubits
+            ValueError: if vector and matrix have different number of qubits
             ValueError: the input matrix is not a numoy array nor a quantum circuit
 
         Returns:
@@ -324,6 +322,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             vec_norm = np.linalg.norm(vector)
             if vec_norm != 0:
                 self.vector_circuit.prepare_state(vector / vec_norm)
+            else:
+                raise ValueError("Norm of b vector is null!")
 
         # general numpy matrix
         if isinstance(matrix, np.ndarray):
@@ -451,17 +451,17 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             List[QuantumCircuit]: quantum circuits needed for the global cost function
         """
 
-        hdmr_tests_overlap = []
         # create the circuits for <0|U^* A_l V|0\rangle\langle 0| V^* Am^* U|0>
         # either using overal test or hadammard test
         if options["use_overlap_test"]:
+            hdmr_overlap_tests = []
             for ii_mat in range(len(self.matrix_circuits)):
                 mat_i = self.matrix_circuits[ii_mat]
 
                 for jj_mat in range(ii_mat, len(self.matrix_circuits)):
                     mat_j = self.matrix_circuits[jj_mat]
 
-                    hdmr_tests_overlap.append(
+                    hdmr_overlap_tests.append(
                         HadammardOverlapTest(
                             operators=[
                                 self.vector_circuit,
@@ -472,9 +472,12 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             apply_measurement=True,
                         )
                     )
+            return hdmr_overlap_tests
+
         else:
+            hdmr_tests = []
             for mat_i in self.matrix_circuits:
-                hdmr_tests_overlap.append(
+                hdmr_tests.append(
                     HadammardTest(
                         operators=[
                             self.ansatz,
@@ -485,7 +488,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                     )
                 )
 
-        return hdmr_tests_overlap
+            return hdmr_tests
 
     @staticmethod
     def get_coefficient_matrix(coeffs) -> np.ndarray:
@@ -572,7 +575,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         # add the sum of the cici coeffs
         out += np.trace(coeff_matrix)
 
-        return out
+        return out[0]
 
     def _compute_global_terms(
         self, coeff_matrix: np.ndarray, hdmr_values: np.ndarray, options: Dict
@@ -772,7 +775,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             )
 
         valid_matrix_decomposition = ["symmetric", "pauli"]
-        if options["matrix_decomposition"].lower() not in valid_matrix_decomposition:
+        if options["matrix_decomposition"] not in valid_matrix_decomposition:
             raise ValueError(
                 "matrix decomposition {k} not recognized, \
                     valid keys are {valid_matrix_decomposition}"
