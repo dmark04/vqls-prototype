@@ -16,20 +16,15 @@ Variational Quantum Linear Solver
 =======================================
 """
 
-from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
-from qalcore.qiskit.vqls.hadamard_test import HadammardTest, HadammardOverlapTest
-from qalcore.qiskit.vqls.numpy_unitary_matrices import UnitaryDecomposition
-from qalcore.qiskit.vqls.variational_linear_solver import (
-    VariationalLinearSolver,
-    VariationalResult,
-)
+from .vqls import VQLS, VQLSLog
+from .hadamard_test import HadammardTest, HadammardOverlapTest
+from .matrix_decomposition import SymmetricDecomposition, PauliDecomposition
 
 __all__ = [
     "VQLS",
     "VQLSLog"
     "HadammardTest",
     "HadammardOverlapTest",
-    "UnitaryDecomposition",
-    "VariationalLinearSolver",
-    "VariationalResult",
+    "SymmetricDecomposition",
+    "PauliDecomposition"
 ]
