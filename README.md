@@ -22,10 +22,8 @@ This repository contains a prototype implementation of the variational quantum l
 5.  [Tutorials](docs/tutorials/README.md)
 6.  [How-Tos](docs/how_tos/README.md)
 7.  [Prototype Template File Glossary](docs/file-map-and-description.md)
-8.  [How to Give Feedback](#how-to-give-feedback)
-9.  [Contribution Guidelines](#contribution-guidelines)
-10. [References and Acknowledgements](#references-and-acknowledgements)
-11. [License](#license)
+8.  [References and Acknowledgements](#references-and-acknowledgements)
+9.  [License](#license)
 
 ##### For Developers/Contributors
 
