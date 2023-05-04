@@ -1,3 +1,4 @@
+"""Methods to decompose a matrix into quantum circuits"""
 from collections import namedtuple
 from itertools import product
 from typing import Optional, Union, List, Tuple, TypeVar, cast
@@ -46,11 +47,14 @@ class MatrixDecomposition:
         """Decompose a matrix representing quantum circuits
 
         Args:
-            matrix (Optional[npt.NDArray], optional): Array to decompose; only relevant in derived classes where
-            `self.decompose_matrix()` has been implemented. Defaults to None.
-            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):  quantum circuits representing the matrix. Defaults to None.
-            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional): coefficients associated with the input quantum circuits; `None` is
-            valid only for a circuit with 1 element. Defaults to None.
+            matrix (Optional[npt.NDArray], optional): Array to decompose;
+                only relevant in derived classes where
+                `self.decompose_matrix()` has been implemented. Defaults to None.
+            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):
+                quantum circuits representing the matrix. Defaults to None.
+            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional):
+                coefficients associated with the input quantum circuits; `None` is
+                valid only for a circuit with 1 element. Defaults to None.
         """
 
         if matrix is not None:  # ignore circuits & coefficients
@@ -85,7 +89,8 @@ class MatrixDecomposition:
             self._matrix = self.recompose()
         else:
             raise ValueError(
-                f"inconsistent arguments: matrix={matrix}, coefficients={coefficients}, circuits={circuits}"
+                f"inconsistent arguments: matrix={matrix}, \
+                    coefficients={coefficients}, circuits={circuits}"
             )
 
         self.num_circuits = len(self._circuits)
@@ -207,9 +212,9 @@ class SymmetricDecomposition(MatrixDecomposition):
         """
 
         def make_qc(mat: complex_arr_t, name: str) -> QuantumCircuit:
-            qc = QuantumCircuit(self.num_qubits, name=name)
-            qc.unitary(mat, qc.qubits)
-            return qc
+            circuit = QuantumCircuit(self.num_qubits, name=name)
+            circuit.unitary(mat, circuit.qubits)
+            return circuit
 
         return [make_qc(mat, name) for mat, name in zip(unimatrices, names)]
 
@@ -217,7 +222,8 @@ class SymmetricDecomposition(MatrixDecomposition):
     def auxilliary_matrix(
         x: Union[npt.NDArray[np.float_], complex_arr_t]
     ) -> complex_arr_t:
-        """Returns the auxiliary matrix for the decomposition of size n and derfined as defined as : i * sqrt(I - x^2)
+        """Returns the auxiliary matrix for the decomposition of size n.
+           and derfined as defined as : i * sqrt(I - x^2)
 
         Args:
             x (Union[npt.NDArray[np.float_], complex_arr_t]): original matrix.
@@ -235,7 +241,9 @@ class SymmetricDecomposition(MatrixDecomposition):
         """Decompose a generic numpy matrix into a sum of unitary matrices.
 
         Returns:
-            Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:  A tuple containing the list of coefficients numpy matrices, and quantum circuits of the decomposition.
+            Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+                A tuple containing the list of coefficients numpy matrices,
+                and quantum circuits of the decomposition.
         """
 
         # Normalize
@@ -289,7 +297,7 @@ class PauliDecomposition(MatrixDecomposition):
             if (
                 gate.upper() != "I"
             ):  # identity gate cannot be controlled by ancillary qubit
-                qc.__getattribute__(gate.lower())(iqbit)
+                qc.getattr(gate.lower())(iqbit)
         return qc
 
     def decompose_matrix(
@@ -299,7 +307,8 @@ class PauliDecomposition(MatrixDecomposition):
 
         Returns:
             Tuple[complex_arr_t, List[complex_arr_t]]:
-                A tuple containing the list of coefficients and the numpy matrix of the decomposition.
+                A tuple containing the list of coefficients and
+                the numpy matrix of the decomposition.
         """
 
         prefactor = 1.0 / (2**self.num_qubits)

@@ -20,16 +20,11 @@ import numpy as np
 
 from qiskit import BasicAer, QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.utils import algorithm_globals, has_aer
-from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-from vqls_prototype import SymmetricDecomposition
+from qiskit.utils import algorithm_globals
 
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
 from vqls_prototype import VQLS, VQLSLog
-
-if has_aer():
-    from qiskit import Aer
 
 
 class TestVQLS(QiskitTestCase):
@@ -106,8 +101,6 @@ class TestVQLS(QiskitTestCase):
         qc2.h(0)
         qc2.x(1)
         qc2.cnot(0, 1)
-
-        matrix = SymmetricDecomposition(circuits=[qc1, qc2], coefficients=[0.5, 0.5])
 
         for estimator, sampler in zip(self.estimators, self.samplers):
             for opt in self.options:
