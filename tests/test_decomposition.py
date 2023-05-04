@@ -5,7 +5,7 @@ import pytest
 from vqls_prototype.matrix_decomposition import (
     MatrixDecomposition,
     SymmetricDecomposition,
-    PauliDecomposition
+    PauliDecomposition,
 )
 
 
@@ -23,7 +23,9 @@ def test_decomposition_raises():
         MatrixDecomposition(matrix=mat)
 
 
-@pytest.mark.parametrize("decomposition_t", [SymmetricDecomposition, PauliDecomposition])
+@pytest.mark.parametrize(
+    "decomposition_t", [SymmetricDecomposition, PauliDecomposition]
+)
 def test_decomposition(symmetric, decomposition_t):
     decomp = decomposition_t(matrix=symmetric)
     assert_allclose(decomp.recompose(), symmetric)

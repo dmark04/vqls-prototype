@@ -31,6 +31,7 @@ from vqls_prototype import VQLS, VQLSLog
 if has_aer():
     from qiskit import Aer
 
+
 class TestVQLS(QiskitTestCase):
     """Test VQLS"""
 
@@ -38,20 +39,14 @@ class TestVQLS(QiskitTestCase):
         super().setUp()
         self.seed = 50
         algorithm_globals.random_seed = self.seed
-        
+
         self.options = (
-            {
-                "use_local_cost_function": False,
-                "use_overlap_test": False
-            },
+            {"use_local_cost_function": False, "use_overlap_test": False},
             {
                 "use_local_cost_function": True,
                 "use_overlap_test": False,
             },
-            {
-                "use_local_cost_function": False,
-                "use_overlap_test": True
-            },             
+            {"use_local_cost_function": False, "use_overlap_test": True},
         )
 
         self.estimators = (
@@ -61,43 +56,42 @@ class TestVQLS(QiskitTestCase):
 
         self.samplers = (
             Sampler(),
-            BackendSampler(BasicAer.get_backend("qasm_simulator"))
+            BackendSampler(BasicAer.get_backend("qasm_simulator")),
         )
 
-        self.log = VQLSLog([],[])
-
+        self.log = VQLSLog([], [])
 
     def test_numpy_input(self):
         """Test the VQLS on matrix input using statevector simulator."""
-        
-        matrix = np.array([ [0.50, 0.25, 0.10, 0.00],
-                            [0.25, 0.50, 0.25, 0.10],
-                            [0.10, 0.25, 0.50, 0.25],
-                            [0.00, 0.10, 0.25, 0.50] ])
 
-        rhs = np.array([0.1]*4)
-        ansatz = RealAmplitudes(num_qubits=2, reps=3, entanglement='full')
+        matrix = np.array(
+            [
+                [0.50, 0.25, 0.10, 0.00],
+                [0.25, 0.50, 0.25, 0.10],
+                [0.10, 0.25, 0.50, 0.25],
+                [0.00, 0.10, 0.25, 0.50],
+            ]
+        )
 
-        
-        for estimator, sampler in  zip(self.estimators, self.samplers):
+        rhs = np.array([0.1] * 4)
+        ansatz = RealAmplitudes(num_qubits=2, reps=3, entanglement="full")
+
+        for estimator, sampler in zip(self.estimators, self.samplers):
             for opt in self.options:
-
                 vqls = VQLS(
                     estimator,
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
                     callback=self.log.update,
-                    sampler=sampler
+                    sampler=sampler,
                 )
                 _ = vqls.solve(matrix, rhs, opt)
-
-
 
     def test_circuit_input_statevector(self):
         """Test the VQLS on circuits input using statevector simulator."""
 
         num_qubits = 2
-        ansatz = RealAmplitudes(num_qubits=num_qubits, reps=3, entanglement='full')
+        ansatz = RealAmplitudes(num_qubits=num_qubits, reps=3, entanglement="full")
 
         rhs = QuantumCircuit(num_qubits)
         rhs.h(0)
@@ -106,29 +100,25 @@ class TestVQLS(QiskitTestCase):
         qc1 = QuantumCircuit(num_qubits)
         qc1.x(0)
         qc1.x(1)
-        qc1.cnot(0,1)
+        qc1.cnot(0, 1)
 
         qc2 = QuantumCircuit(num_qubits)
         qc2.h(0)
         qc2.x(1)
-        qc2.cnot(0,1)
+        qc2.cnot(0, 1)
 
-        matrix = SymmetricDecomposition(
-            circuits = [qc1, qc2],
-            coefficients = [0.5, 0.5]
-        )
+        matrix = SymmetricDecomposition(circuits=[qc1, qc2], coefficients=[0.5, 0.5])
 
-        for estimator, sampler in  zip(self.estimators, self.samplers):
+        for estimator, sampler in zip(self.estimators, self.samplers):
             for opt in self.options:
                 vqls = VQLS(
                     estimator,
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
                     sampler=sampler,
-                    callback=self.log.update
+                    callback=self.log.update,
                 )
                 _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs, opt)
-
 
 
 if __name__ == "__main__":
