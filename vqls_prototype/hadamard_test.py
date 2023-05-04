@@ -168,6 +168,16 @@ class HadammardTest:
         return one_op_ctrl
 
     def get_value(self, estimator, parameter_sets: List) -> List:
+        """Compute the value of the test
+
+        Args:
+            estimator (Estimator): an estimator instance
+            parameter_sets (List): The list of parameter values for the circuit
+
+        Returns:
+            List: _description_
+        """
+
         def post_processing(estimator_result) -> List:
             return [1.0 - 2.0 * val for val in estimator_result.values]
 
