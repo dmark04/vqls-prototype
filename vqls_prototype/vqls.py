@@ -575,7 +575,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         # add the sum of the cici coeffs
         out += np.trace(coeff_matrix)
 
-        return out[0]
+        return out.item()
 
     def _compute_global_terms(
         self, coeff_matrix: np.ndarray, hdmr_values: np.ndarray, options: Dict
