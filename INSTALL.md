@@ -1,26 +1,35 @@
-# Quantum Prototype Installation Guide
+# VQLS Prototype Installation Guide
 
-This document should walk users through the process of setting up their Python environment, installing dependencies, and installing the prototype software.
+This document should walk you throgh the installation of the vqls prototpe
 
 ## Setting up Python Environment
 
-Show the user how to create a fresh Python environment
+Create a new conda environement. The code has been tested with different python version and should work for version 3.8 onward.
+
+```
+conda create -n vqls pythn==3.9
+``` 
 
 ## Installing Depencencies
 
-Show the user how to install the *required* quantum prototype dependencies
-
-## Installing Optional Dependencies
-
-Tell the user about some optional packages they may want to install. Explain what functionality is provided by each optional package in this section.
+The dependencies needed are all included in the `requirements.txt`. Therefore you do not need to install anything prior to the protoype 
 
 ## Installing Quantum Prototype Software
 
-Tell the user how to install the prototype software.
+Clone the repository and pip install it.
+
+```
+git clone https://github.com/QuantumApplicationLab/vqls-prototype
+cd vqls-prototype
+pip install .
+```
+
 
 ## Testing the Installation
 
-Give the user some steps to validate that the installation was successful.
+You can test your installation by executing the tests
 
-Example:
-`$ quantum_prototype --help`
+```
+cd  tests
+pytest
+```

@@ -11,14 +11,14 @@ $$ A \cdot x = b $$
 with $A$ is a matrix, $b$ a vector and $x$ the solution of the system. For this VQLS use a variational approach with a variational ansatz $V(\theta)$ such as 
 
 
-$$|x(theta)\rangle = V(\theta)|0\rangle$$. 
+$$|x(\theta)\rangle = V(\theta)|0\rangle$$. 
 
 
 The variational parameters of the ansatz are then optimized by minimizing the cost function 
 
 $$ C_L(\theta) = 1 - \frac{\langle b|\Psi(\theta)\rangle}{\langle \Psi(\theta)|\Psi(\theta)\rangle} $$
 
-with $|\Psi(\theta)\rangle = A|x(theta)\rangle$. 
+with $|\Psi(\theta)\rangle = A|x(\theta)\rangle$. 
 
 ## Installation
 The code does not rely on external dependencies, except qiskit itself of course. After cloning the repository pip install it.
