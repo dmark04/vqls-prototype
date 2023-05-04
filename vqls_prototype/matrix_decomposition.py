@@ -24,7 +24,14 @@ class MatrixDecomposition:
     def _as_complex(
         cls, num_or_arr: Union[complex_t, List[complex_t]]
     ) -> complex_arr_t:
-        """Converts a number or a list of numbers to a complex array."""
+        """Converts a number or a list of numbers to a complex array.
+
+        Args:
+            num_or_arr (Union[complex_t, List[complex_t]]): array of number to convert
+
+        Returns:
+            complex_arr_t: array of complex numbers
+        """
         arr = num_or_arr if isinstance(num_or_arr, List) else [num_or_arr]
         return np.array(arr, dtype=np.cdouble)
 
@@ -38,20 +45,14 @@ class MatrixDecomposition:
     ):
         """Decompose a matrix representing quantum circuits
 
-        Parameters
-        ----------
-        matrix : npt.NDArray
-            Array to decompose; only relevant in derived classes where
-            `self.decompose_matrix()` has been implemented
-
-        circuits : Union[QuantumCircuit, List[QuantumCircuit]]
-            quantum circuits representing the matrix
-
-        coefficients : Union[float, complex, List[float], List[complex]] (default: None)
-            coefficients associated with the input quantum circuits; `None` is
-            valid only for a circuit with 1 element
-
+        Args:
+            matrix (Optional[npt.NDArray], optional): Array to decompose; only relevant in derived classes where
+            `self.decompose_matrix()` has been implemented. Defaults to None.
+            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):  quantum circuits representing the matrix. Defaults to None.
+            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional): coefficients associated with the input quantum circuits; `None` is
+            valid only for a circuit with 1 element. Defaults to None.
         """
+
         if matrix is not None:  # ignore circuits & coefficients
             self._matrix, self.num_qubits = self._validate_matrix(matrix)
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
@@ -92,11 +93,31 @@ class MatrixDecomposition:
 
     @classmethod
     def _compute_circuit_size(cls, matrix: npt.NDArray) -> int:
-        """Compute the size of the circuit represented by the matrix."""
+        """Compute the size of the circuit represented by the matrix
+
+        Args:
+            matrix (npt.NDArray): matrix representing the circuit
+
+        Returns:
+            int: circuit size
+        """
         return int(np.log2(matrix.shape[0]))
 
     @classmethod
     def _validate_matrix(cls, matrix: complex_arr_t) -> Tuple[complex_arr_t, int]:
+        """Check the size of the matrix
+
+        Args:
+            matrix (complex_arr_t): input matrix
+
+        Raises:
+            ValueError: if the matrix is not square
+            ValueError: if the matrix size is not a power of 2
+            ValueError: if the matrix is not symmetric
+
+        Returns:
+            Tuple[complex_arr_t, int]: matrix and the number of qubits required
+        """
         if len(matrix.shape) == 2 and matrix.shape[0] != matrix.shape[1]:
             raise ValueError(
                 f"Input matrix must be square: matrix.shape={matrix.shape}"
@@ -153,17 +174,10 @@ class MatrixDecomposition:
         return self.CircuitElement(self._coefficients[index], self._circuits[index])
 
     def recompose(self) -> complex_arr_t:
-        """
-        Rebuilds the original matrix from the decomposed one.
+        """Rebuilds the original matrix from the decomposed one.
 
-        Returns
-        -------
-        np.ndarray
-            The recomposed matrix.
-
-        See Also
-        --------
-        decompose_matrix : Decompose a generic numpy matrix into a sum of unitary matrices.
+        Returns:
+            complex_arr_t: The recomposed matrix.
         """
         coeffs, matrices = self.coefficients, self.matrices
         return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
@@ -177,30 +191,17 @@ class SymmetricDecomposition(MatrixDecomposition):
     A class that represents the symmetric decomposition of a matrix.
     For the mathematical background for the decomposition, see the following
     math.sx answer: https://math.stackexchange.com/a/1710390
-
-    Methods
-    -------
-    decompose_matrix() -> Tuple[complex_arr_t, List[complex_arr_t]]:
-        Decompose a generic numpy matrix into a sum of unitary matrices.
-
-    See Also
-    --------
-    MatrixDecomposition : A base class for matrix decompositions.
-    recompose : Rebuilds the original matrix from the decomposed one.
     """
 
     def _create_circuits(self, unimatrices: List[np.ndarray], names: List[str]) -> List[QuantumCircuit]:
-        """Construct the quantum circuits.
+        """Construct the quantum circuits from unitary matrices
 
-        Parameters
-        ----------
-        unimatrices : List[np.ndarray]
-            list of unitary matrices of the decomposition.
+        Args:
+            unimatrices (List[np.ndarray]): list of unitary matrices of the decomposition.
+            names (List[str]): names of the circuits
 
-        Returns
-        -------
-        List[QuantumCircuit]
-            list of resulting quantum circuits.
+        Returns:
+            List[QuantumCircuit]: quantum circuits
         """
 
         def make_qc(mat: complex_arr_t, name: str) -> QuantumCircuit:
@@ -213,23 +214,13 @@ class SymmetricDecomposition(MatrixDecomposition):
 
     @staticmethod
     def auxilliary_matrix(x: Union[npt.NDArray[np.float_], complex_arr_t]) -> complex_arr_t:
-        """
-        Returns the auxiliary matrix for the decomposition of size n.
+        """Returns the auxiliary matrix for the decomposition of size n and derfined as defined as : i * sqrt(I - x^2)
 
-        Parameters
-        ----------
-        x : np.ndarray
-            original matrix.
+        Args:
+            x (Union[npt.NDArray[np.float_], complex_arr_t]): original matrix.
 
-        Returns
-        -------
-        np.ndarray
-            The auxiliary matrix.
-
-        Notes
-        -----
-        The auxiliary matrix is defined as : i * sqrt(I - x^2)
-
+        Returns:
+            complex_arr_t: The auxiliary matrix.
         """
         mat = np.eye(len(x)) - x @ x
         mat = cast(npt.NDArray[Union[np.float_, np.cdouble]], spla.sqrtm(mat))
@@ -238,23 +229,12 @@ class SymmetricDecomposition(MatrixDecomposition):
     def decompose_matrix(
         self,
     ) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+        """Decompose a generic numpy matrix into a sum of unitary matrices.
+
+        Returns:
+            Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:  A tuple containing the list of coefficients numpy matrices, and quantum circuits of the decomposition.
         """
-        Decompose a generic numpy matrix into a sum of unitary matrices.
-
-        Parameters
-        ----------
-        matrix : np.ndarray
-            The matrix to be decomposed.
-
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            A tuple containing the list of coefficients and the numpy matrix of the decomposition.
-
-        See Also
-        --------
-        recompose : Rebuilds the original matrix from the decomposed one.
-        """
+  
         # Normalize
         norm = np.linalg.norm(self._matrix)
         mat = self._matrix / norm
@@ -286,23 +266,7 @@ class SymmetricDecomposition(MatrixDecomposition):
 
 
 class PauliDecomposition(MatrixDecomposition):
-    """
-    A class that represents the Pauli decomposition of a matrix.
-
-    Attributes
-    ----------
-    basis : str
-        The basis of Pauli gates used for the decomposition.
-
-    Methods
-    -------
-    decompose_matrix() -> Tuple[complex_arr_t, List[complex_arr_t]]:
-        Decompose a matrix into a sum of Pauli strings.
-
-    See Also
-    --------
-    MatrixDecomposition : A base class for matrix decompositions.
-    """
+    """A class that represents the Pauli decomposition of a matrix."""
 
     basis = "IXYZ"
 

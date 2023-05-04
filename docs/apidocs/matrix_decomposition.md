@@ -18,7 +18,7 @@ Base class for the decomposition of a matrix in quantum circuits.
 
 
 
-<a href="../vqls_prototype/matrix_decomposition.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -32,12 +32,13 @@ __init__(
 
 Decompose a matrix representing quantum circuits 
 
-Parameters 
----------- matrix : npt.NDArray  Array to decompose; only relevant in derived classes where  `self.decompose_matrix()` has been implemented 
 
-circuits : Union[QuantumCircuit, List[QuantumCircuit]]  quantum circuits representing the matrix 
 
-coefficients : Union[float, complex, List[float], List[complex]] (default: None)  coefficients associated with the input quantum circuits; `None` is  valid only for a circuit with 1 element 
+**Args:**
+ 
+ - <b>`matrix`</b> (Optional[npt.NDArray], optional):  Array to decompose; only relevant in derived classes where `self.decompose_matrix()` has been implemented. Defaults to None. 
+ - <b>`circuits`</b> (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):   quantum circuits representing the matrix. Defaults to None. 
+ - <b>`coefficients`</b> (Optional[ Union[float, complex, List[float], List[complex]] ], optional):  coefficients associated with the input quantum circuits; `None` is valid only for a circuit with 1 element. Defaults to None. 
 
 
 ---
@@ -68,7 +69,7 @@ matrix of the decomposition
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L171"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `decompose_matrix`
 
@@ -82,7 +83,7 @@ decompose_matrix() → Tuple[ndarray[Any, dtype[complex128]], List[ndarray[Any, 
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L176"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `recompose`
 
@@ -92,27 +93,21 @@ recompose() → ndarray[Any, dtype[complex128]]
 
 Rebuilds the original matrix from the decomposed one. 
 
-Returns 
-------- np.ndarray  The recomposed matrix. 
 
-See Also 
--------- decompose_matrix : Decompose a generic numpy matrix into a sum of unitary matrices. 
+
+**Returns:**
+ 
+ - <b>`complex_arr_t`</b>:  The recomposed matrix. 
 
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L175"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L189"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `SymmetricDecomposition`
 A class that represents the symmetric decomposition of a matrix. For the mathematical background for the decomposition, see the following math.sx answer: https://math.stackexchange.com/a/1710390 
 
-Methods 
-------- decompose_matrix() -> Tuple[complex_arr_t, List[complex_arr_t]]:  Decompose a generic numpy matrix into a sum of unitary matrices. 
-
-See Also 
--------- MatrixDecomposition : A base class for matrix decompositions. recompose : Rebuilds the original matrix from the decomposed one. 
-
-<a href="../vqls_prototype/matrix_decomposition.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -126,12 +121,13 @@ __init__(
 
 Decompose a matrix representing quantum circuits 
 
-Parameters 
----------- matrix : npt.NDArray  Array to decompose; only relevant in derived classes where  `self.decompose_matrix()` has been implemented 
 
-circuits : Union[QuantumCircuit, List[QuantumCircuit]]  quantum circuits representing the matrix 
 
-coefficients : Union[float, complex, List[float], List[complex]] (default: None)  coefficients associated with the input quantum circuits; `None` is  valid only for a circuit with 1 element 
+**Args:**
+ 
+ - <b>`matrix`</b> (Optional[npt.NDArray], optional):  Array to decompose; only relevant in derived classes where `self.decompose_matrix()` has been implemented. Defaults to None. 
+ - <b>`circuits`</b> (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):   quantum circuits representing the matrix. Defaults to None. 
+ - <b>`coefficients`</b> (Optional[ Union[float, complex, List[float], List[complex]] ], optional):  coefficients associated with the input quantum circuits; `None` is valid only for a circuit with 1 element. Defaults to None. 
 
 
 ---
@@ -162,7 +158,7 @@ matrix of the decomposition
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L214"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L215"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `auxilliary_matrix`
 
@@ -172,20 +168,23 @@ auxilliary_matrix(
 ) → ndarray[Any, dtype[complex128]]
 ```
 
-Returns the auxiliary matrix for the decomposition of size n. 
+Returns the auxiliary matrix for the decomposition of size n and derfined as defined as : i * sqrt(I - x^2) 
 
-Parameters 
----------- x : np.ndarray  original matrix. 
 
-Returns 
-------- np.ndarray  The auxiliary matrix. 
 
-Notes 
------ The auxiliary matrix is defined as : i * sqrt(I - x^2) 
+**Args:**
+ 
+ - <b>`x`</b> (Union[npt.NDArray[np.float_], complex_arr_t]):  original matrix. 
+
+
+
+**Returns:**
+ 
+ - <b>`complex_arr_t`</b>:  The auxiliary matrix. 
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L238"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L229"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `decompose_matrix`
 
@@ -195,18 +194,15 @@ decompose_matrix() → Tuple[ndarray[Any, dtype[complex128]], List[ndarray[Any, 
 
 Decompose a generic numpy matrix into a sum of unitary matrices. 
 
-Parameters 
----------- matrix : np.ndarray  The matrix to be decomposed. 
 
-Returns 
-------- Tuple[np.ndarray, np.ndarray]  A tuple containing the list of coefficients and the numpy matrix of the decomposition. 
 
-See Also 
--------- recompose : Rebuilds the original matrix from the decomposed one. 
+**Returns:**
+ 
+ - <b>`Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]`</b>:   A tuple containing the list of coefficients numpy matrices, and quantum circuits of the decomposition. 
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L176"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `recompose`
 
@@ -216,30 +212,21 @@ recompose() → ndarray[Any, dtype[complex128]]
 
 Rebuilds the original matrix from the decomposed one. 
 
-Returns 
-------- np.ndarray  The recomposed matrix. 
 
-See Also 
--------- decompose_matrix : Decompose a generic numpy matrix into a sum of unitary matrices. 
+
+**Returns:**
+ 
+ - <b>`complex_arr_t`</b>:  The recomposed matrix. 
 
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L288"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L268"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PauliDecomposition`
 A class that represents the Pauli decomposition of a matrix. 
 
-Attributes 
----------- basis : str  The basis of Pauli gates used for the decomposition. 
-
-Methods 
-------- decompose_matrix() -> Tuple[complex_arr_t, List[complex_arr_t]]:  Decompose a matrix into a sum of Pauli strings. 
-
-See Also 
--------- MatrixDecomposition : A base class for matrix decompositions. 
-
-<a href="../vqls_prototype/matrix_decomposition.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -253,12 +240,13 @@ __init__(
 
 Decompose a matrix representing quantum circuits 
 
-Parameters 
----------- matrix : npt.NDArray  Array to decompose; only relevant in derived classes where  `self.decompose_matrix()` has been implemented 
 
-circuits : Union[QuantumCircuit, List[QuantumCircuit]]  quantum circuits representing the matrix 
 
-coefficients : Union[float, complex, List[float], List[complex]] (default: None)  coefficients associated with the input quantum circuits; `None` is  valid only for a circuit with 1 element 
+**Args:**
+ 
+ - <b>`matrix`</b> (Optional[npt.NDArray], optional):  Array to decompose; only relevant in derived classes where `self.decompose_matrix()` has been implemented. Defaults to None. 
+ - <b>`circuits`</b> (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):   quantum circuits representing the matrix. Defaults to None. 
+ - <b>`coefficients`</b> (Optional[ Union[float, complex, List[float], List[complex]] ], optional):  coefficients associated with the input quantum circuits; `None` is valid only for a circuit with 1 element. Defaults to None. 
 
 
 ---
@@ -289,7 +277,7 @@ matrix of the decomposition
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L326"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L290"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `decompose_matrix`
 
@@ -306,7 +294,7 @@ Decompose a generic numpy matrix into a sum of Pauli strings.
 
 ---
 
-<a href="../vqls_prototype/matrix_decomposition.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../vqls_prototype/matrix_decomposition.py#L176"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `recompose`
 
@@ -316,11 +304,11 @@ recompose() → ndarray[Any, dtype[complex128]]
 
 Rebuilds the original matrix from the decomposed one. 
 
-Returns 
-------- np.ndarray  The recomposed matrix. 
 
-See Also 
--------- decompose_matrix : Decompose a generic numpy matrix into a sum of unitary matrices. 
+
+**Returns:**
+ 
+ - <b>`complex_arr_t`</b>:  The recomposed matrix. 
 
 
 
