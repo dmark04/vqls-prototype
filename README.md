@@ -6,11 +6,16 @@
 [![Tests](https://github.com/qiskit-community/quantum-prototype-template/actions/workflows/test_latest_versions.yml/badge.svg)](https://github.com/qiskit-community/quantum-prototype-template/actions/workflows/test_latest_versions.yml)
 [![Coverage](https://coveralls.io/repos/github/qiskit-community/quantum-prototype-template/badge.svg?branch=main)](https://coveralls.io/github/qiskit-community/quantum-prototype-template?branch=main)
 
-# Quantum Prototype Template
+# Variational Quantum Linear Solver Prototype
 
-This template repository is a tool for creating Python projects quickly by providing much of the necessary boilerplate code. The code examples in this template repository are written in accordance with pylint style checks, and the sample `prototype_template` module has an associated unit test module. We have also included examples of coverage testing, notebook tests, and notebook lint checks and wrapped all of these using [tox](https://github.com/tox-dev/tox) automated testing software. Check out the [file glossary](https://github.com/qiskit-community/quantum-prototype-template/blob/main/docs/file-map-and-description.md) for more information on each tool used in this repository.
+This repository contains a prototype implementation of the variational quantum linear solver [1,2]. VQLS allows to solve linear systems as 
 
-We encourage you to use this template repository to begin your own research projects!
+$$
+A\times x = b
+$$
+
+using variational circuits. 
+
 
 ### Table of Contents
 
@@ -36,25 +41,9 @@ We encourage you to use this template repository to begin your own research proj
 
 ----------------------------------------------------------------------------------------------------
 
-### How to Give Feedback
-
-We encourage your feedback! You can share your thoughts with us by:
-- [Opening an issue](https://github.com/qiskit-community/quantum-prototype-template/issues) in the repository
-
-
-----------------------------------------------------------------------------------------------------
-
-### Contribution Guidelines
-
-For information on how to contribute to this project, please take a look at our [contribution guidelines](CONTRIBUTING.md).
-
-
-----------------------------------------------------------------------------------------------------
-
 ## References and Acknowledgements
-[1] Diátaxis Technical Documentation Framework \
-    https://diataxis.fr/
-
+[1] Variational Quantum Linear Solver, Carlos Bravo-Prieto, Ryan LaRose, M. Cerezo, Yigit Subasi, Lukasz Cincio, Patrick J. Coles, arXiv.1909.05820, 2020
+[2] VQLS Tutorial: https://github.com/qiskit-community/qiskit-textbook/blob/main/content/ch-paper-implementations/vqls.ipynb
 
 ----------------------------------------------------------------------------------------------------
 
