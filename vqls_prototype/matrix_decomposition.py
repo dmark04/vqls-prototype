@@ -62,9 +62,10 @@ class MatrixDecomposition:
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
 
         elif circuits is not None:
-            self._circuits: List[QuantumCircuit] = (
+            self._circuits = (
                 circuits if isinstance(circuits, (list, tuple)) else [circuits]
             )
+
             assert_(
                 isinstance(self._circuits[0], QuantumCircuit),
                 f"{circuits}: invalid circuit",
@@ -80,7 +81,7 @@ class MatrixDecomposition:
             if len(self._circuits) != len(self._coefficients):
                 raise ValueError("number of coefficients and circuits do not match")
 
-            self.num_qubits: int = self._circuits[0].num_qubits
+            self.num_qubits = self._circuits[0].num_qubits
             if not all(map(lambda ct: ct.num_qubits == self.num_qubits, self.circuits)):
                 _num_qubits = [ct.num_qubits for ct in self.circuits]
                 raise ValueError(f"mismatched number of qubits: {_num_qubits}")

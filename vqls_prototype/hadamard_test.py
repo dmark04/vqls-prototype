@@ -6,6 +6,7 @@ from qiskit.algorithms.exceptions import AlgorithmError
 from qiskit.opflow import TensoredOp
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
+import numpy.typing as npt
 
 
 class HadammardTest:
@@ -87,7 +88,7 @@ class HadammardTest:
         self,
         operators: List[QuantumCircuit],
         use_barrier: bool,
-        apply_control_to_operator: bool,
+        apply_control_to_operator: List[bool],
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
     ) -> List[QuantumCircuit]:
@@ -178,8 +179,10 @@ class HadammardTest:
             List: _description_
         """
 
-        def post_processing(estimator_result) -> List:
-            return [1.0 - 2.0 * val for val in estimator_result.values]
+        def post_processing(estimator_result) -> npt.NDArray[np.cdouble]:
+            return np.array(
+                [1.0 - 2.0 * val for val in estimator_result.values]
+            ).astype("complex128")
 
         ncircuits = len(self.circuits)
 
@@ -194,9 +197,8 @@ class HadammardTest:
             raise AlgorithmError(
                 "The primitive to evaluate the Hadammard Test failed!"
             ) from exc
-        results = np.array(results).astype("complex128")
-        results *= np.array([1.0, 1.0j])
 
+        results *= np.array([1.0, 1.0j])
         return results.sum()
 
 
@@ -380,7 +382,7 @@ class HadammardOverlapTest:
             float: value of the overlap hadammard test
         """
 
-        def post_processing(sampler_result) -> List:
+        def post_processing(sampler_result) -> npt.NDArray[np.cdouble]:
             """Post process the sampled values of the circuits
 
             Args:
@@ -405,13 +407,11 @@ class HadammardOverlapTest:
 
                 output.append(proba_0 - proba_1)
 
-            return output
+            return np.array(output).astype("complex128")
 
         ncircuits = len(self.circuits)
         job = sampler.run(self.circuits, [parameter_sets] * ncircuits)
         results = post_processing(job.result())
-
-        results = np.array(results).astype("complex128")
         results *= np.array([1.0, 1.0j])
 
         return results.sum()
