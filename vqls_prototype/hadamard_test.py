@@ -3,7 +3,7 @@
 from typing import Optional, List, Union
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.algorithms.exceptions import AlgorithmError
-from qiskit.opflow import Z, I, TensoredOp
+from qiskit.opflow import TensoredOp
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np 
 

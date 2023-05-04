@@ -23,6 +23,12 @@ with $|\Psi(\theta)\rangle = A|x(\theta)\rangle$.
 ## Installation
 The code does not rely on external dependencies, except qiskit itself of course. After cloning the repository pip install it.
 
+```
+git clone https://github.com/QuantumApplicationLab/vqls-prototype 
+cd vqls-prototype
+pip install .
+```
+
 ## Usage
 The code is organized very similarly as the VQE class. Hence users may simply instantiate the VQLS class and run the otpimization
 
