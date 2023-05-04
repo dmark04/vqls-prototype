@@ -5,11 +5,12 @@ from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.algorithms.exceptions import AlgorithmError
 from qiskit.opflow import TensoredOp
 from qiskit.quantum_info import SparsePauliOp
-import numpy as np 
+import numpy as np
+
 
 class HadammardTest:
-    r"""Class to compute the Hadamard Test
-    """
+    r"""Class to compute the Hadamard Test"""
+
     def __init__(
         self,
         operators: Union[QuantumCircuit, List[QuantumCircuit]],
@@ -17,7 +18,7 @@ class HadammardTest:
         apply_control_to_operator: Optional[Union[bool, List[bool]]] = True,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
-    ) :
+    ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
         .. math::
@@ -37,7 +38,7 @@ class HadammardTest:
             operators = [operators]
 
         if not isinstance(apply_control_to_operator, list):
-            apply_control_to_operator = [apply_control_to_operator]*len(operators)
+            apply_control_to_operator = [apply_control_to_operator] * len(operators)
 
         if apply_control_to_operator[0]:
             self.num_qubits = operators[0].num_qubits + 1
@@ -95,21 +96,16 @@ class HadammardTest:
         Returns:
             List[QuantumCircuit]: List of quamtum circuits required to compute the Hadammard Test.
         """
-
         circuits = []
 
         for imaginary in [False, True]:
-
             if apply_measurement:
                 qc = QuantumCircuit(self.num_qubits, self.num_clbits)
             else:
                 qc = QuantumCircuit(self.num_qubits)
 
             if apply_initial_state is not None:
-                qc.append(
-                    apply_initial_state, 
-                    list(range(1, self.num_qubits))
-                )
+                qc.append(apply_initial_state, list(range(1, self.num_qubits)))
 
             if use_barrier:
                 qc.barrier()
@@ -127,10 +123,7 @@ class HadammardTest:
             # matrix circuit
             for op, ctrl in zip(operators, apply_control_to_operator):
                 if ctrl:
-                    qc.append(
-                        op.control(1),
-                        list(range(0, self.num_qubits))
-                    )
+                    qc.append(op.control(1), list(range(0, self.num_qubits)))
                 else:
                     qc.append(op, list(range(0, self.num_qubits)))
             if use_barrier:
@@ -155,39 +148,43 @@ class HadammardTest:
         """
 
         p0 = "I" * self.num_qubits
-        p1 = "I" * (self.num_qubits-1) + "Z"
-        one_op_ctrl = SparsePauliOp([p0,p1], np.array([0.5 +0.0j, -0.5 +0.0j]))
+        p1 = "I" * (self.num_qubits - 1) + "Z"
+        one_op_ctrl = SparsePauliOp([p0, p1], np.array([0.5 + 0.0j, -0.5 + 0.0j]))
         return one_op_ctrl
 
     def get_value(self, estimator, parameter_sets: List) -> List:
-
         def post_processing(estimator_result) -> List:
             return [1.0 - 2.0 * val for val in estimator_result.values]
 
         ncircuits = len(self.circuits)
 
         try:
-            job = estimator.run(self.circuits, [self.observable]*ncircuits, [parameter_sets]*ncircuits)
+            job = estimator.run(
+                self.circuits,
+                [self.observable] * ncircuits,
+                [parameter_sets] * ncircuits,
+            )
             results = post_processing(job.result())
         except Exception as exc:
-            raise AlgorithmError("The primitive to evaluate the Hadammard Test failed!") from exc
-        results = np.array(results).astype('complex128')
+            raise AlgorithmError(
+                "The primitive to evaluate the Hadammard Test failed!"
+            ) from exc
+        results = np.array(results).astype("complex128")
         results *= np.array([1.0, 1.0j])
 
         return results.sum()
 
 
-
 class HadammardOverlapTest:
-    r"""Class to compute the Hadamard Test
-    """
+    r"""Class to compute the Hadamard Test"""
+
     def __init__(
         self,
         operators: List[QuantumCircuit],
         use_barrier: Optional[bool] = False,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = True,
-    ) :
+    ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
         .. math::
@@ -204,14 +201,13 @@ class HadammardOverlapTest:
             List[QuantumCircuit]: List of quamtum circuits required to compute the Hadammard Test.
         """
 
-        self.operator_num_qubits = operators[0].num_qubits 
-        self.num_qubits = 2*operators[0].num_qubits + 1
+        self.operator_num_qubits = operators[0].num_qubits
+        self.num_qubits = 2 * operators[0].num_qubits + 1
         if apply_initial_state is not None:
             if apply_initial_state.num_qubits != operators[0].num_qubits:
                 raise ValueError(
                     "The operator and the initial state circuits have different numbers of qubits"
                 )
-
 
         # classical bit for explicit measurement
         self.num_clbits = self.num_qubits
@@ -256,10 +252,9 @@ class HadammardOverlapTest:
         U, Al, Am = operators
 
         for imaginary in [False, True]:
-
-            qctrl = QuantumRegister(1, 'qctrl')
-            qreg0 = QuantumRegister(Al.num_qubits, 'qr0')
-            qreg1 = QuantumRegister(Am.num_qubits, 'qr1')
+            qctrl = QuantumRegister(1, "qctrl")
+            qreg0 = QuantumRegister(Al.num_qubits, "qr0")
+            qreg1 = QuantumRegister(Am.num_qubits, "qr1")
             qc = QuantumCircuit(qctrl, qreg0, qreg1)
 
             # hadadmard gate on ctrl qbit
@@ -267,9 +262,7 @@ class HadammardOverlapTest:
 
             # prepare psi on the first register
             if apply_initial_state is not None:
-                qc.append(
-                    apply_initial_state, qreg0
-                )
+                qc.append(apply_initial_state, qreg0)
 
             # apply U on the second register
             qc.append(U, qreg1)
@@ -278,11 +271,11 @@ class HadammardOverlapTest:
                 qc.barrier()
 
             # apply Al on the first qreg
-            idx = [0] + list(range(1,Al.num_qubits+1))
+            idx = [0] + list(range(1, Al.num_qubits + 1))
             qc.append(Al.control(1), idx)
 
             # apply Am^\dagger on the second reg
-            idx = [0] + list(range(Al.num_qubits+1,2*Al.num_qubits+1))
+            idx = [0] + list(range(Al.num_qubits + 1, 2 * Al.num_qubits + 1))
             qc.append(Am.inverse().control(1), idx)
 
             if use_barrier:
@@ -290,11 +283,11 @@ class HadammardOverlapTest:
 
             # apply the cnot gate
             for q0, q1 in zip(qreg0, qreg1):
-                qc.cx(q0,q1)
-            
+                qc.cx(q0, q1)
+
             # Sdg on ctrl qbit
             if imaginary:
-                qc.rz(-np.pi/2, qctrl)
+                qc.rz(-np.pi / 2, qctrl)
 
             if use_barrier:
                 qc.barrier()
@@ -302,48 +295,45 @@ class HadammardOverlapTest:
             # hadamard on ctrl circuit
             qc.h(qctrl)
             for q0 in qreg0:
-                qc.h(q0) 
+                qc.h(q0)
 
             # measure
             if apply_measurement:
                 qc.measure_all(inplace=True)
-                
+
             circuits.append(qc)
 
         return circuits
 
     def compute_post_processing_coefficients(self):
-        """Compute the coefficients for the postprocessing 
-        """
+        """Compute the coefficients for the postprocessing"""
 
         # compute [1,1,1,-1] \otimes n
         # these are the coefficients if the qubits of register A and B
         # are ordered as A0 B0 A1 B1 .... AN BN
-        c0 = np.array([1,1,1,-1])
-        coeffs = np.array([1,1,1,-1])
-        for _ in range(1,self.operator_num_qubits):
+        c0 = np.array([1, 1, 1, -1])
+        coeffs = np.array([1, 1, 1, -1])
+        for _ in range(1, self.operator_num_qubits):
             coeffs = np.tensordot(coeffs, c0, axes=0).flatten()
-
 
         # create all the possible bit strings of a single register
         bit_strings = []
-        for i in range(2**(self.operator_num_qubits)):
-            bit_strings.append( f"{i:b}".zfill(self.operator_num_qubits) )
+        for i in range(2 ** (self.operator_num_qubits)):
+            bit_strings.append(f"{i:b}".zfill(self.operator_num_qubits))
 
         # coeff in the A0 A1 .. AN B0 B1 ... BN
         reordered_coeffs = np.zeros_like(coeffs)
 
-        # Reorder the coefficients from 
+        # Reorder the coefficients from
         # A0 B0 A1 B1 ... AN BN => A0 A1 .. AN B0 B1 ... BN
         for bs1 in bit_strings:
             for bs2 in bit_strings:
-                idx = int(bs1+bs2, 2)
-                new_bit_string = ''.join([i+j for i,j in zip(bs1, bs2)])
-                idx_ori = int(new_bit_string,2)
+                idx = int(bs1 + bs2, 2)
+                new_bit_string = "".join([i + j for i, j in zip(bs1, bs2)])
+                idx_ori = int(new_bit_string, 2)
                 reordered_coeffs[idx] = coeffs[idx_ori]
 
-        return reordered_coeffs 
-
+        return reordered_coeffs
 
     def get_value(self, sampler, parameter_sets: List) -> float:
         """Compute and return the value of Hadmard overlap test
@@ -365,16 +355,17 @@ class HadammardOverlapTest:
             Returns:
                 List: value of the overlap hadammard test
             """
-            
+
             quasi_dist = sampler_result.quasi_dists
             output = []
 
             for qd in quasi_dist:
-                
-                # add missing keys 
-                val = np.array([qd[k] if k in qd else 0 for k in range(2**self.num_qubits)])
+                # add missing keys
+                val = np.array(
+                    [qd[k] if k in qd else 0 for k in range(2**self.num_qubits)]
+                )
                 # val = (val * val.conj())
-            
+
                 # v0, v1 = np.array_split(val, 2)
                 v0, v1 = val[0::2], val[1::2]
                 p0 = (v0 * self.post_process_coeffs).sum()
@@ -385,10 +376,10 @@ class HadammardOverlapTest:
             return output
 
         ncircuits = len(self.circuits)
-        job = sampler.run(self.circuits, [parameter_sets]*ncircuits)
+        job = sampler.run(self.circuits, [parameter_sets] * ncircuits)
         results = post_processing(job.result())
 
-        results = np.array(results).astype('complex128')
+        results = np.array(results).astype("complex128")
         results *= np.array([1.0, 1.0j])
 
         return results.sum()

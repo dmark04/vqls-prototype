@@ -14,9 +14,9 @@ from qiskit.quantum_info import Operator, Pauli
 complex_t = TypeVar("complex_t", float, complex)
 complex_arr_t = npt.NDArray[np.cdouble]
 
+
 class MatrixDecomposition:
-    """Base class for the decomposition of a matrix in quantum circuits.
-    """
+    """Base class for the decomposition of a matrix in quantum circuits."""
 
     CircuitElement = namedtuple("CircuitElement", ["coeff", "circuit"])
 
@@ -56,7 +56,7 @@ class MatrixDecomposition:
         if matrix is not None:  # ignore circuits & coefficients
             self._matrix, self.num_qubits = self._validate_matrix(matrix)
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
-            
+
         elif circuits is not None:
             self._circuits: List[QuantumCircuit] = (
                 circuits if isinstance(circuits, (list, tuple)) else [circuits]
@@ -127,12 +127,10 @@ class MatrixDecomposition:
             raise ValueError(
                 f"Input matrix dimension is not a power of 2: {num_qubits}"
             )
-        if not np.allclose(matrix, matrix.conj().T): 
+        if not np.allclose(matrix, matrix.conj().T):
             raise ValueError(f"Input matrix isn't symmetric:\n{matrix}")
-        
+
         return matrix, num_qubits
-
-
 
     @property
     def matrix(self) -> np.ndarray:
@@ -182,7 +180,9 @@ class MatrixDecomposition:
         coeffs, matrices = self.coefficients, self.matrices
         return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
 
-    def decompose_matrix(self) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+    def decompose_matrix(
+        self,
+    ) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
 
 
@@ -193,7 +193,9 @@ class SymmetricDecomposition(MatrixDecomposition):
     math.sx answer: https://math.stackexchange.com/a/1710390
     """
 
-    def _create_circuits(self, unimatrices: List[np.ndarray], names: List[str]) -> List[QuantumCircuit]:
+    def _create_circuits(
+        self, unimatrices: List[np.ndarray], names: List[str]
+    ) -> List[QuantumCircuit]:
         """Construct the quantum circuits from unitary matrices
 
         Args:
@@ -211,9 +213,10 @@ class SymmetricDecomposition(MatrixDecomposition):
 
         return [make_qc(mat, name) for mat, name in zip(unimatrices, names)]
 
-
     @staticmethod
-    def auxilliary_matrix(x: Union[npt.NDArray[np.float_], complex_arr_t]) -> complex_arr_t:
+    def auxilliary_matrix(
+        x: Union[npt.NDArray[np.float_], complex_arr_t]
+    ) -> complex_arr_t:
         """Returns the auxiliary matrix for the decomposition of size n and derfined as defined as : i * sqrt(I - x^2)
 
         Args:
@@ -234,7 +237,7 @@ class SymmetricDecomposition(MatrixDecomposition):
         Returns:
             Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:  A tuple containing the list of coefficients numpy matrices, and quantum circuits of the decomposition.
         """
-  
+
         # Normalize
         norm = np.linalg.norm(self._matrix)
         mat = self._matrix / norm
@@ -259,7 +262,7 @@ class SymmetricDecomposition(MatrixDecomposition):
         unit_coeffs = np.array(unitary_coefficients, dtype=np.cdouble)
 
         # create the circuits
-        names = ['A+','A-']
+        names = ["A+", "A-"]
         circuits = self._create_circuits(unitary_matrices, names)
 
         return unit_coeffs, unitary_matrices, circuits
@@ -278,20 +281,24 @@ class PauliDecomposition(MatrixDecomposition):
             pauli_string (str): the input pauli string
 
         Returns:
-            QuantumCircuit: quantum circuit for the string 
+            QuantumCircuit: quantum circuit for the string
         """
         num_qubit = len(pauli_string)
-        qc = QuantumCircuit(num_qubit,name=pauli_string)
+        qc = QuantumCircuit(num_qubit, name=pauli_string)
         for iqbit, gate in enumerate(pauli_string[::-1]):
-            if gate.upper()!='I': # identity gate cannot be controlled by ancillary qubit
+            if (
+                gate.upper() != "I"
+            ):  # identity gate cannot be controlled by ancillary qubit
                 qc.__getattribute__(gate.lower())(iqbit)
         return qc
 
-    def decompose_matrix(self) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+    def decompose_matrix(
+        self,
+    ) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
         """Decompose a generic numpy matrix into a sum of Pauli strings.
 
         Returns:
-            Tuple[complex_arr_t, List[complex_arr_t]]: 
+            Tuple[complex_arr_t, List[complex_arr_t]]:
                 A tuple containing the list of coefficients and the numpy matrix of the decomposition.
         """
 
@@ -299,7 +306,6 @@ class PauliDecomposition(MatrixDecomposition):
         unit_mats, coeffs, circuits = [], [], []
 
         for pauli_gates in product(self.basis, repeat=self.num_qubits):
-
             pauli_string = "".join(pauli_gates)
             pauli_op = Pauli(pauli_string)
             pauli_matrix = pauli_op.to_matrix()

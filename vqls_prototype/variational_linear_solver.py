@@ -20,7 +20,6 @@ from qiskit import QuantumCircuit
 from qiskit.algorithms.variational_algorithm import VariationalResult
 
 
-
 class VariationalLinearSolverResult(VariationalResult):
     """A base class for linear systems results using variational methods
 
