@@ -7,7 +7,8 @@ This document should walk you throgh the installation of the vqls prototpe
 Create a new conda environement. The code has been tested with different python version and should work for version 3.8 onward.
 
 ```
-conda create -n vqls pythn==3.9
+conda create -n vqls python==3.9
+conda activate vqls
 ``` 
 
 ## Installing Depencencies
