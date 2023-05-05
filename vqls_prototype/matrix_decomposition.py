@@ -1,3 +1,4 @@
+"""Methods to decompose a matrix into quantum circuits"""
 from collections import namedtuple
 from itertools import product
 from typing import Optional, Union, List, Tuple, TypeVar, cast
@@ -11,26 +12,26 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Operator, Pauli
 
 
-complex_t = TypeVar("complex_t", float, complex)
-complex_arr_t = npt.NDArray[np.cdouble]
+complex_type = TypeVar("complex_type", float, complex)
+complex_array_type = npt.NDArray[np.cdouble]
+
 
 class MatrixDecomposition:
-    """Base class for the decomposition of a matrix in quantum circuits.
-    """
+    """Base class for the decomposition of a matrix in quantum circuits."""
 
     CircuitElement = namedtuple("CircuitElement", ["coeff", "circuit"])
 
-    @classmethod
+    @staticmethod
     def _as_complex(
-        cls, num_or_arr: Union[complex_t, List[complex_t]]
-    ) -> complex_arr_t:
+        num_or_arr: Union[float, List[float], complex, List[complex]]
+    ) -> npt.NDArray[np.cdouble]:
         """Converts a number or a list of numbers to a complex array.
 
         Args:
-            num_or_arr (Union[complex_t, List[complex_t]]): array of number to convert
+            num_or_arr (Union[complex_type, List[complex_type]]): array of number to convert
 
         Returns:
-            complex_arr_t: array of complex numbers
+            complex_array_type: array of complex numbers
         """
         arr = num_or_arr if isinstance(num_or_arr, List) else [num_or_arr]
         return np.array(arr, dtype=np.cdouble)
@@ -46,21 +47,23 @@ class MatrixDecomposition:
         """Decompose a matrix representing quantum circuits
 
         Args:
-            matrix (Optional[npt.NDArray], optional): Array to decompose; only relevant in derived classes where
-            `self.decompose_matrix()` has been implemented. Defaults to None.
-            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):  quantum circuits representing the matrix. Defaults to None.
-            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional): coefficients associated with the input quantum circuits; `None` is
-            valid only for a circuit with 1 element. Defaults to None.
+            matrix (Optional[npt.NDArray], optional): Array to decompose;
+                only relevant in derived classes where
+                `self.decompose_matrix()` has been implemented. Defaults to None.
+            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):
+                quantum circuits representing the matrix. Defaults to None.
+            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional):
+                coefficients associated with the input quantum circuits; `None` is
+                valid only for a circuit with 1 element. Defaults to None.
         """
 
         if matrix is not None:  # ignore circuits & coefficients
             self._matrix, self.num_qubits = self._validate_matrix(matrix)
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
-            
+
         elif circuits is not None:
-            self._circuits: List[QuantumCircuit] = (
-                circuits if isinstance(circuits, (list, tuple)) else [circuits]
-            )
+            self._circuits = circuits if isinstance(circuits, list) else [circuits]
+
             assert_(
                 isinstance(self._circuits[0], QuantumCircuit),
                 f"{circuits}: invalid circuit",
@@ -76,7 +79,7 @@ class MatrixDecomposition:
             if len(self._circuits) != len(self._coefficients):
                 raise ValueError("number of coefficients and circuits do not match")
 
-            self.num_qubits: int = self._circuits[0].num_qubits
+            self.num_qubits = self._circuits[0].num_qubits
             if not all(map(lambda ct: ct.num_qubits == self.num_qubits, self.circuits)):
                 _num_qubits = [ct.num_qubits for ct in self.circuits]
                 raise ValueError(f"mismatched number of qubits: {_num_qubits}")
@@ -85,7 +88,8 @@ class MatrixDecomposition:
             self._matrix = self.recompose()
         else:
             raise ValueError(
-                f"inconsistent arguments: matrix={matrix}, coefficients={coefficients}, circuits={circuits}"
+                f"inconsistent arguments: matrix={matrix}, \
+                    coefficients={coefficients}, circuits={circuits}"
             )
 
         self.num_circuits = len(self._circuits)
@@ -104,11 +108,13 @@ class MatrixDecomposition:
         return int(np.log2(matrix.shape[0]))
 
     @classmethod
-    def _validate_matrix(cls, matrix: complex_arr_t) -> Tuple[complex_arr_t, int]:
+    def _validate_matrix(
+        cls, matrix: complex_array_type
+    ) -> Tuple[complex_array_type, int]:
         """Check the size of the matrix
 
         Args:
-            matrix (complex_arr_t): input matrix
+            matrix (complex_array_type): input matrix
 
         Raises:
             ValueError: if the matrix is not square
@@ -116,7 +122,7 @@ class MatrixDecomposition:
             ValueError: if the matrix is not symmetric
 
         Returns:
-            Tuple[complex_arr_t, int]: matrix and the number of qubits required
+            Tuple[complex_array_type, int]: matrix and the number of qubits required
         """
         if len(matrix.shape) == 2 and matrix.shape[0] != matrix.shape[1]:
             raise ValueError(
@@ -127,12 +133,10 @@ class MatrixDecomposition:
             raise ValueError(
                 f"Input matrix dimension is not a power of 2: {num_qubits}"
             )
-        if not np.allclose(matrix, matrix.conj().T): 
+        if not np.allclose(matrix, matrix.conj().T):
             raise ValueError(f"Input matrix isn't symmetric:\n{matrix}")
-        
+
         return matrix, num_qubits
-
-
 
     @property
     def matrix(self) -> np.ndarray:
@@ -145,12 +149,12 @@ class MatrixDecomposition:
         return self._circuits
 
     @property
-    def coefficients(self) -> complex_arr_t:
+    def coefficients(self) -> complex_array_type:
         """coefficients of the decomposition."""
         return self._coefficients
 
     @property
-    def matrices(self) -> List[complex_arr_t]:
+    def matrices(self) -> List[complex_array_type]:
         """return the unitary matrices"""
         return self._matrices
 
@@ -173,16 +177,18 @@ class MatrixDecomposition:
     def __getitem__(self, index):
         return self.CircuitElement(self._coefficients[index], self._circuits[index])
 
-    def recompose(self) -> complex_arr_t:
+    def recompose(self) -> complex_array_type:
         """Rebuilds the original matrix from the decomposed one.
 
         Returns:
-            complex_arr_t: The recomposed matrix.
+            complex_array_type: The recomposed matrix.
         """
         coeffs, matrices = self.coefficients, self.matrices
         return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
 
-    def decompose_matrix(self) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+    def decompose_matrix(
+        self,
+    ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
 
 
@@ -193,7 +199,9 @@ class SymmetricDecomposition(MatrixDecomposition):
     math.sx answer: https://math.stackexchange.com/a/1710390
     """
 
-    def _create_circuits(self, unimatrices: List[np.ndarray], names: List[str]) -> List[QuantumCircuit]:
+    def _create_circuits(
+        self, unimatrices: List[np.ndarray], names: List[str]
+    ) -> List[QuantumCircuit]:
         """Construct the quantum circuits from unitary matrices
 
         Args:
@@ -204,23 +212,25 @@ class SymmetricDecomposition(MatrixDecomposition):
             List[QuantumCircuit]: quantum circuits
         """
 
-        def make_qc(mat: complex_arr_t, name: str) -> QuantumCircuit:
-            qc = QuantumCircuit(self.num_qubits, name=name)
-            qc.unitary(mat, qc.qubits)
-            return qc
+        def make_qc(mat: complex_array_type, name: str) -> QuantumCircuit:
+            circuit = QuantumCircuit(self.num_qubits, name=name)
+            circuit.unitary(mat, circuit.qubits)
+            return circuit
 
         return [make_qc(mat, name) for mat, name in zip(unimatrices, names)]
 
-
     @staticmethod
-    def auxilliary_matrix(x: Union[npt.NDArray[np.float_], complex_arr_t]) -> complex_arr_t:
-        """Returns the auxiliary matrix for the decomposition of size n and derfined as defined as : i * sqrt(I - x^2)
+    def auxilliary_matrix(
+        x: Union[npt.NDArray[np.float_], complex_array_type]
+    ) -> complex_array_type:
+        """Returns the auxiliary matrix for the decomposition of size n.
+           and derfined as defined as : i * sqrt(I - x^2)
 
         Args:
-            x (Union[npt.NDArray[np.float_], complex_arr_t]): original matrix.
+            x (Union[npt.NDArray[np.float_], complex_array_type]): original matrix.
 
         Returns:
-            complex_arr_t: The auxiliary matrix.
+            complex_array_type: The auxiliary matrix.
         """
         mat = np.eye(len(x)) - x @ x
         mat = cast(npt.NDArray[Union[np.float_, np.cdouble]], spla.sqrtm(mat))
@@ -228,13 +238,15 @@ class SymmetricDecomposition(MatrixDecomposition):
 
     def decompose_matrix(
         self,
-    ) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+    ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         """Decompose a generic numpy matrix into a sum of unitary matrices.
 
         Returns:
-            Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:  A tuple containing the list of coefficients numpy matrices, and quantum circuits of the decomposition.
+            Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
+                A tuple containing the list of coefficients numpy matrices,
+                and quantum circuits of the decomposition.
         """
-  
+
         # Normalize
         norm = np.linalg.norm(self._matrix)
         mat = self._matrix / norm
@@ -259,7 +271,7 @@ class SymmetricDecomposition(MatrixDecomposition):
         unit_coeffs = np.array(unitary_coefficients, dtype=np.cdouble)
 
         # create the circuits
-        names = ['A+','A-']
+        names = ["A+", "A-"]
         circuits = self._create_circuits(unitary_matrices, names)
 
         return unit_coeffs, unitary_matrices, circuits
@@ -278,32 +290,36 @@ class PauliDecomposition(MatrixDecomposition):
             pauli_string (str): the input pauli string
 
         Returns:
-            QuantumCircuit: quantum circuit for the string 
+            QuantumCircuit: quantum circuit for the string
         """
         num_qubit = len(pauli_string)
-        qc = QuantumCircuit(num_qubit,name=pauli_string)
+        circuit = QuantumCircuit(num_qubit, name=pauli_string)
         for iqbit, gate in enumerate(pauli_string[::-1]):
-            if gate.upper()!='I': # identity gate cannot be controlled by ancillary qubit
-                qc.__getattribute__(gate.lower())(iqbit)
-        return qc
+            if (
+                gate.upper() != "I"
+            ):  # identity gate cannot be controlled by ancillary qubit
+                getattr(circuit, gate.lower())(iqbit)
+        return circuit
 
-    def decompose_matrix(self) -> Tuple[complex_arr_t, List[complex_arr_t], List[QuantumCircuit]]:
+    def decompose_matrix(
+        self,
+    ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         """Decompose a generic numpy matrix into a sum of Pauli strings.
 
         Returns:
-            Tuple[complex_arr_t, List[complex_arr_t]]: 
-                A tuple containing the list of coefficients and the numpy matrix of the decomposition.
+            Tuple[complex_array_type, List[complex_array_type]]:
+                A tuple containing the list of coefficients and
+                the numpy matrix of the decomposition.
         """
 
         prefactor = 1.0 / (2**self.num_qubits)
         unit_mats, coeffs, circuits = [], [], []
 
         for pauli_gates in product(self.basis, repeat=self.num_qubits):
-
             pauli_string = "".join(pauli_gates)
             pauli_op = Pauli(pauli_string)
             pauli_matrix = pauli_op.to_matrix()
-            coef: complex_arr_t = np.trace(pauli_matrix @ self.matrix)
+            coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
 
             if coef * np.conj(coef) != 0:
                 coeffs.append(prefactor * coef)

@@ -22,9 +22,9 @@ from .matrix_decomposition import SymmetricDecomposition, PauliDecomposition
 
 __all__ = [
     "VQLS",
-    "VQLSLog"
+    "VQLSLog",
     "HadammardTest",
     "HadammardOverlapTest",
     "SymmetricDecomposition",
-    "PauliDecomposition"
+    "PauliDecomposition",
 ]

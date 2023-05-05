@@ -5,13 +5,15 @@
     ],
     "language": {
         "name": "python",
-        "versions": ["3.9"]
+        "versions": [
+            "3.9"
+        ]
     },
     "tests_command": [
         "pytest"
     ],
     "styles_check_command": [
-        "pylint -rn prototype_template tests"
+        "pylint -rn vqls_prototype tests"
     ],
     "coverages_check_command": [
         "coverage3 run -m pytest",
