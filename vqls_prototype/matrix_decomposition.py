@@ -12,7 +12,7 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Operator, Pauli
 
 
-complex_number_type = TypeVar("complex_number_type", float, complex)
+complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
 
 
@@ -21,14 +21,14 @@ class MatrixDecomposition:
 
     CircuitElement = namedtuple("CircuitElement", ["coeff", "circuit"])
 
-    @classmethod
+    @staticmethod
     def _as_complex(
-        cls, num_or_arr: Union[complex_number_type, List[complex_number_type]]
-    ) -> complex_array_type:
+        num_or_arr: Union[float, List[float], complex, List[complex]]
+    ) -> npt.NDArray[np.cdouble]:
         """Converts a number or a list of numbers to a complex array.
 
         Args:
-            num_or_arr (Union[complex_type, List[complex_number_type]]): array of number to convert
+            num_or_arr (Union[complex_type, List[complex_type]]): array of number to convert
 
         Returns:
             complex_array_type: array of complex numbers
@@ -62,9 +62,7 @@ class MatrixDecomposition:
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
 
         elif circuits is not None:
-            self._circuits = (
-                circuits if isinstance(circuits, (list, tuple)) else [circuits]
-            )
+            self._circuits = circuits if isinstance(circuits, list) else [circuits]
 
             assert_(
                 isinstance(self._circuits[0], QuantumCircuit),
