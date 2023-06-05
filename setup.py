@@ -20,9 +20,12 @@ setuptools.setup(
     description="Prototype for a Quantum Linear Solver",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    author=["Nicolas Renaud"],
+    author_email="n.renaud@esciencecenter.nl",
+    url="https://github.com/QuantumApplicationLab/vqls-prototype",
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     python_requires=">=3.7",
     setup_requires=["setuptools_scm"],
-    use_scm_version=True,
+    use_scm_version=False,
 )
