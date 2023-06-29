@@ -314,7 +314,7 @@ class PauliDecomposition(MatrixDecomposition):
 
         prefactor = 1.0 / (2**self.num_qubits)
         unit_mats, coeffs, circuits = [], [], []
-
+        self.strings = []
         for pauli_gates in product(self.basis, repeat=self.num_qubits):
             pauli_string = "".join(pauli_gates)
             pauli_op = Pauli(pauli_string)
@@ -322,6 +322,7 @@ class PauliDecomposition(MatrixDecomposition):
             coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
 
             if coef * np.conj(coef) != 0:
+                self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
                 unit_mats.append(pauli_matrix)
                 circuits.append(self._create_circuit(pauli_string))

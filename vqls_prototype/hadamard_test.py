@@ -8,6 +8,52 @@ from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 
+class BatchHadammardTest:
+    r"""Class that execute batches of Hadammard Test"""
+
+    def __init__(
+        self,
+        hdmr_list: List
+    ):
+        """Create a single container that computes many hadamard tests 
+
+        Args:
+            hdrm_list (List): A list of HadamardTest instances
+        """
+        self.hdmr_list = hdmr_list
+        self.circuits = [c for hdmr in hdmr_list for c in hdmr.circuits]
+        self.observable = [hdmr.observable for hdmr in hdmr_list for _ in range(2)]
+        self.post_processing = hdmr_list[0].post_processing
+        self.shots = hdmr_list[0].shots
+
+    def get_values(self, primitive, parameter_sets: List) -> List:
+        """Compute the value of the test
+
+        Args:
+            estimator (Estimator): an estimator instance
+            parameter_sets (List): The list of parameter values for the circuit
+
+        Returns:
+            List: values of the batched Hadammard Tests
+        """
+
+        ncircuits = len(self.circuits)
+
+        try:
+            job = primitive.run(
+                self.circuits,
+                self.observable,
+                [parameter_sets] * ncircuits,
+                shots=self.shots
+            )
+            results = self.post_processing(job.result())
+        except Exception as exc:
+            raise AlgorithmError(
+                "The primitive to evaluate the Hadammard Test failed!"
+            ) from exc
+
+        results *= np.array([1.0, 1.0j]*(ncircuits//2))
+        return results.reshape(-1,2).sum(1).reshape(-1)
 
 class HadammardTest:
     r"""Class to compute the Hadamard Test"""
@@ -19,6 +65,7 @@ class HadammardTest:
         apply_control_to_operator: Optional[Union[bool, List[bool]]] = True,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
+        shots: Optional[int] = 4000
     ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
@@ -83,6 +130,9 @@ class HadammardTest:
 
         # init the expectation
         self.expect_ops = None
+
+        # number of shots
+        self.shots = shots
 
     def _build_circuit(
         self,
@@ -168,6 +218,19 @@ class HadammardTest:
         )
         return one_op_ctrl
 
+    def post_processing(self, estimator_result) -> npt.NDArray[np.cdouble]:
+        """Post process the measurement values
+
+        Args:
+            estimator_result (job results): the results of the circuits measurements
+
+        Returns:
+            npt.NDArray[np.cdouble]: value of the test
+        """
+        return np.array(
+            [1.0 - 2.0 * val for val in estimator_result.values]
+        ).astype("complex128")
+
     def get_value(self, estimator, parameter_sets: List) -> List:
         """Compute the value of the test
 
@@ -176,13 +239,8 @@ class HadammardTest:
             parameter_sets (List): The list of parameter values for the circuit
 
         Returns:
-            List: _description_
+            List: value of the test
         """
-
-        def post_processing(estimator_result) -> npt.NDArray[np.cdouble]:
-            return np.array(
-                [1.0 - 2.0 * val for val in estimator_result.values]
-            ).astype("complex128")
 
         ncircuits = len(self.circuits)
 
@@ -191,8 +249,9 @@ class HadammardTest:
                 self.circuits,
                 [self.observable] * ncircuits,
                 [parameter_sets] * ncircuits,
+                shots = self.shots
             )
-            results = post_processing(job.result())
+            results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
                 "The primitive to evaluate the Hadammard Test failed!"
@@ -211,6 +270,7 @@ class HadammardOverlapTest:
         use_barrier: Optional[bool] = False,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = True,
+        shots: Optional[int] = 4000
     ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
@@ -260,6 +320,9 @@ class HadammardOverlapTest:
 
         # var for iterator
         self.iiter = None
+
+        # number of shots
+        self.shots = shots
 
     def _build_circuit(
         self,
@@ -371,6 +434,33 @@ class HadammardOverlapTest:
 
         return reordered_coeffs
 
+    def post_processing(self, sampler_result) -> npt.NDArray[np.cdouble]:
+        """Post process the sampled values of the circuits
+
+        Args:
+            sampler_result (results): Result of the sampler
+
+        Returns:
+            List: value of the overlap hadammard test
+        """
+
+        quasi_dist = sampler_result.quasi_dists
+        output = []
+
+        for qdist in quasi_dist:
+            # add missing keys
+            val = np.array(
+                [qdist[k] if k in qdist else 0 for k in range(2**self.num_qubits)]
+            )
+
+            value_0, value_1 = val[0::2], val[1::2]
+            proba_0 = (value_0 * self.post_process_coeffs).sum()
+            proba_1 = (value_1 * self.post_process_coeffs).sum()
+
+            output.append(proba_0 - proba_1)
+
+        return np.array(output).astype("complex128")
+    
     def get_value(self, sampler, parameter_sets: List) -> float:
         """Compute and return the value of Hadmard overlap test
 
@@ -381,37 +471,11 @@ class HadammardOverlapTest:
         Returns:
             float: value of the overlap hadammard test
         """
-
-        def post_processing(sampler_result) -> npt.NDArray[np.cdouble]:
-            """Post process the sampled values of the circuits
-
-            Args:
-                sampler_result (results): Result of the sampler
-
-            Returns:
-                List: value of the overlap hadammard test
-            """
-
-            quasi_dist = sampler_result.quasi_dists
-            output = []
-
-            for qdist in quasi_dist:
-                # add missing keys
-                val = np.array(
-                    [qdist[k] if k in qdist else 0 for k in range(2**self.num_qubits)]
-                )
-
-                value_0, value_1 = val[0::2], val[1::2]
-                proba_0 = (value_0 * self.post_process_coeffs).sum()
-                proba_1 = (value_1 * self.post_process_coeffs).sum()
-
-                output.append(proba_0 - proba_1)
-
-            return np.array(output).astype("complex128")
-
         ncircuits = len(self.circuits)
-        job = sampler.run(self.circuits, [parameter_sets] * ncircuits)
-        results = post_processing(job.result())
+        job = sampler.run(self.circuits, 
+                          [parameter_sets] * ncircuits,
+                          shots=self.shots)
+        results = self.post_processing(job.result())
         results *= np.array([1.0, 1.0j])
 
         return results.sum()

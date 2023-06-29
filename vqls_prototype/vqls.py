@@ -35,7 +35,7 @@ from .matrix_decomposition import (
     MatrixDecomposition,
     PauliDecomposition,
 )
-from .hadamard_test import HadammardTest, HadammardOverlapTest
+from .hadamard_test import HadammardTest, HadammardOverlapTest, BatchHadammardTest
 
 
 @dataclass
@@ -187,6 +187,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             "use_overlap_test": False,
             "use_local_cost_function": False,
             "matrix_decomposition": "symmetric",
+            "shots": 4000
         }
 
     @property
@@ -364,12 +365,12 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # create only the circuit for <psi|psi> =  <0|V A_n ^* A_m V|0>
         # with n != m as the diagonal terms (n==m) always give a proba of 1.0
-        hdmr_tests_norm = self._get_norm_circuits()
+        hdmr_tests_norm = self._get_norm_circuits(options)
 
         # create the circuits for <b|psi>
         # local cost function
         if options["use_local_cost_function"]:
-            hdmr_tests_overlap = self._get_local_circuits()
+            hdmr_tests_overlap = self._get_local_circuits(options)
 
         # global cost function
         else:
@@ -377,7 +378,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return hdmr_tests_norm, hdmr_tests_overlap
 
-    def _get_norm_circuits(self) -> List[QuantumCircuit]:
+    def _get_norm_circuits(self, options) -> List[QuantumCircuit]:
         """construct the circuit for the norm
 
         Returns:
@@ -396,11 +397,12 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                         operators=[mat_i.circuit.inverse(), mat_j.circuit],
                         apply_initial_state=self._ansatz,
                         apply_measurement=False,
+                        shots = options["shots"]
                     )
                 )
         return hdmr_tests_norm
 
-    def _get_local_circuits(self) -> List[QuantumCircuit]:
+    def _get_local_circuits(self, options) -> List[QuantumCircuit]:
         """construct the circuits needed for the local cost function
 
         Returns:
@@ -435,6 +437,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             apply_control_to_operator=[True, True, False, True, True],
                             apply_initial_state=self.ansatz,
                             apply_measurement=False,
+                            shots = options["shots"]
                         )
                     )
         return hdmr_tests_overlap
@@ -469,6 +472,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             ],
                             apply_initial_state=self.ansatz,
                             apply_measurement=True,
+                            shots=options["shots"]
                         )
                     )
             return hdmr_overlap_tests
@@ -484,6 +488,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                         self.vector_circuit.inverse(),
                     ],
                     apply_measurement=False,
+                    shots=options["shots"]
                 )
             )
 
@@ -562,7 +567,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         # hdrm_values here contains the values of the <0|V Ai* Aj V|0>  with j>i
         out = hdmr_values
 
-        # we multiuply hdmrval by the triup coeff matrix and sum
+        # we multiply hdmr values by the triup coeff matrix and sum
         out *= coeff_matrix[np.triu_indices_from(coeff_matrix, k=1)]
         out = out.sum()
 
@@ -701,26 +706,43 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "The ansatz must be parameterized, but has 0 free parameters."
             )
 
-        def cost_evaluation(parameters):
-            # estimate the expected values of the norm circuits
-            hdmr_values_norm = np.array(
-                [hdrm.get_value(self.estimator, parameters) for hdrm in hdmr_tests_norm]
-            )
+        batch = True
 
-            if options["use_overlap_test"]:
-                hdmr_values_overlap = np.array(
-                    [
-                        hdrm.get_value(self.sampler, parameters)
-                        for hdrm in hdmr_tests_overlap
-                    ]
-                )
+        def cost_evaluation(parameters):
+
+            # set the primtiive for the norm calculation
+            primitive = self.estimator
+
+            if batch:
+                # estimate the expected values of the norm circuits
+                hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
+
+                # switch primitive to sampler if we do overlap test
+                if options["use_overlap_test"]:
+                    primitive = self.sampler
+                
+                # estimate the expected values of the overlap circuits
+                hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(self.estimator, parameters)
+
             else:
+
+                # estimate the expected values of the norm circuits
+                hdmr_values_norm = np.array(
+                    [hdrm.get_value(primitive, parameters) for hdrm in hdmr_tests_norm]
+                )
+                
+                # switch primitive to sampler if we do overlap test
+                if options["use_overlap_test"]:
+                    primitive = self.sampler
+
+                # estimate the expected values of the overlap circuits
                 hdmr_values_overlap = np.array(
                     [
-                        hdrm.get_value(self.estimator, parameters)
+                        hdrm.get_value(primitive, parameters)
                         for hdrm in hdmr_tests_overlap
                     ]
                 )
+
             # compute the total cost
             cost = self._assemble_cost_function(
                 hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
