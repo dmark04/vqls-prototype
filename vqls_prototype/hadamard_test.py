@@ -51,7 +51,7 @@ class BatchHadammardTest:
             raise AlgorithmError(
                 "The primitive to evaluate the Hadammard Test failed!"
             ) from exc
-
+        # print(results)
         results *= np.array([1.0, 1.0j]*(ncircuits//2))
         return results.reshape(-1,2).sum(1).reshape(-1)
 
