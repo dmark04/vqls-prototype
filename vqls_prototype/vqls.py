@@ -565,7 +565,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # compute all the terms in <\phi|\phi> = \sum c_i* cj <0|V Ai* Aj V|0>
         # hdrm_values here contains the values of the <0|V Ai* Aj V|0>  with j>i
-        out = np.copy(hdmr_values)
+        # out = np.copy(hdmr_values)
+        out = hdmr_values
         
         # we multiply hdmr values by the triup coeff matrix and sum
         out *= coeff_matrix[np.triu_indices_from(coeff_matrix, k=1)]
@@ -706,7 +707,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "The ansatz must be parameterized, but has 0 free parameters."
             )
 
-        batch = True
+        batch = False
 
         def cost_evaluation(parameters):
 
