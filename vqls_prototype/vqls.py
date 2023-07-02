@@ -685,6 +685,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         hdmr_tests_overlap: List,
         coefficient_matrix: np.ndarray,
         options: Dict,
+        batch: Optional[bool] = False
     ) -> Callable[[np.ndarray], Union[float, List[float]]]:
         """Generate the cost function of the minimazation process
 
@@ -707,7 +708,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "The ansatz must be parameterized, but has 0 free parameters."
             )
 
-        batch = False
 
         def cost_evaluation(parameters):
 
