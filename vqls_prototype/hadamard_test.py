@@ -46,6 +46,7 @@ class BatchHadammardTest:
                 [parameter_sets] * ncircuits,
                 shots=self.shots
             )
+            print(job.result())
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
@@ -251,6 +252,7 @@ class HadammardTest:
                 [parameter_sets] * ncircuits,
                 shots = self.shots
             )
+            print(job.result())
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
