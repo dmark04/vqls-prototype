@@ -708,60 +708,84 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "The ansatz must be parameterized, but has 0 free parameters."
             )
 
+        if batch:
 
-        def cost_evaluation(parameters):
+            def cost_evaluation(parameters):
 
-            # set the primtiive for the norm calculation
-            primitive = self.estimator
+                # set the primtiive for the norm calculation
+                primitive = self.estimator
 
-            if batch:
-                # estimate the expected values of the norm circuits
-                hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
+                if batch:
+                    # estimate the expected values of the norm circuits
+                    hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
 
-                # switch primitive to sampler if we do overlap test
-                if options["use_overlap_test"]:
-                    primitive = self.sampler
-                
-                # estimate the expected values of the overlap circuits
-                hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(self.estimator, parameters)
+                    # switch primitive to sampler if we do overlap test
+                    if options["use_overlap_test"]:
+                        primitive = self.sampler
+                    
+                    # estimate the expected values of the overlap circuits
+                    hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(self.estimator, parameters)
 
-            else:
+                # compute the total cost
+                cost = self._assemble_cost_function(
+                    hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
+                )
+
+                # get the intermediate results if required
+                if self._callback is not None:
+                    self._eval_count += 1
+                    self._callback(self._eval_count, cost, parameters)
+                else:
+                    self._eval_count += 1
+                    print(
+                        f"VQLS Iteration {self._eval_count} Cost {cost}",
+                        end="\r",
+                        flush=True,
+                    )
+
+                return cost
+            
+        else:
+             
+             def cost_evaluation(parameters):
 
                 # estimate the expected values of the norm circuits
                 hdmr_values_norm = np.array(
-                    [hdrm.get_value(primitive, parameters) for hdrm in hdmr_tests_norm]
+                    [hdrm.get_value(self.estimator, parameters) for hdrm in hdmr_tests_norm]
                 )
-                
-                # switch primitive to sampler if we do overlap test
+
                 if options["use_overlap_test"]:
-                    primitive = self.sampler
-
-                # estimate the expected values of the overlap circuits
-                hdmr_values_overlap = np.array(
-                    [
-                        hdrm.get_value(primitive, parameters)
-                        for hdrm in hdmr_tests_overlap
-                    ]
+                    hdmr_values_overlap = np.array(
+                        [
+                            hdrm.get_value(self.sampler, parameters)
+                            for hdrm in hdmr_tests_overlap
+                        ]
+                    )
+                else:
+                    hdmr_values_overlap = np.array(
+                        [
+                            hdrm.get_value(self.estimator, parameters)
+                            for hdrm in hdmr_tests_overlap
+                        ]
+                    )
+                # compute the total cost
+                cost = self._assemble_cost_function(
+                    hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
                 )
 
-            # compute the total cost
-            cost = self._assemble_cost_function(
-                hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
-            )
+                # get the intermediate results if required
+                if self._callback is not None:
+                    self._eval_count += 1
+                    self._callback(self._eval_count, cost, parameters)
+                else:
+                    self._eval_count += 1
+                    print(
+                        f"VQLS Iteration {self._eval_count} Cost {cost}",
+                        end="\r",
+                        flush=True,
+                    )
 
-            # get the intermediate results if required
-            if self._callback is not None:
-                self._eval_count += 1
-                self._callback(self._eval_count, cost, parameters)
-            else:
-                self._eval_count += 1
-                print(
-                    f"VQLS Iteration {self._eval_count} Cost {cost}",
-                    end="\r",
-                    flush=True,
-                )
-
-            return cost
+                return cost
 
         return cost_evaluation
 

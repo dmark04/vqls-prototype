@@ -44,7 +44,7 @@ class BatchHadammardTest:
                 self.circuits,
                 self.observable,
                 [parameter_sets] * ncircuits,
-                shots=self.shots
+                # shots=self.shots
             )
             results = self.post_processing(job.result())
         except Exception as exc:
@@ -248,7 +248,7 @@ class HadammardTest:
                 self.circuits,
                 [self.observable] * ncircuits,
                 [parameter_sets] * ncircuits,
-                shots = self.shots
+                # shots = self.shots
             )
             results = self.post_processing(job.result())
         except Exception as exc:
@@ -473,7 +473,8 @@ class HadammardOverlapTest:
         ncircuits = len(self.circuits)
         job = sampler.run(self.circuits, 
                           [parameter_sets] * ncircuits,
-                          shots=self.shots)
+                        #   shots=self.shots
+                        )
         results = self.post_processing(job.result())
         results *= np.array([1.0, 1.0j])
 
