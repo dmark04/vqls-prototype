@@ -34,6 +34,7 @@ from .matrix_decomposition import (
     SymmetricDecomposition,
     MatrixDecomposition,
     PauliDecomposition,
+    ContractedPauliDecomposition
 )
 from .hadamard_test import HadammardTest, HadammardOverlapTest, BatchHadammardTest
 
@@ -340,6 +341,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 )
             decomposition = {
                 "pauli": PauliDecomposition,
+                "contracted_pauli": ContractedPauliDecomposition,
                 "symmetric": SymmetricDecomposition,
             }[options["matrix_decomposition"]]
             self.matrix_circuits = decomposition(matrix=matrix)
@@ -378,6 +380,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return hdmr_tests_norm, hdmr_tests_overlap
 
+
     def _get_norm_circuits(self, options) -> List[QuantumCircuit]:
         """construct the circuit for the norm
 
@@ -387,19 +390,32 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         hdmr_tests_norm = []
 
-        for ii_mat in range(len(self.matrix_circuits)):
-            mat_i = self.matrix_circuits[ii_mat]
-
-            for jj_mat in range(ii_mat + 1, len(self.matrix_circuits)):
-                mat_j = self.matrix_circuits[jj_mat]
+        # if the matrix decomposition has a contraction
+        if hasattr(self.matrix_circuits, 'contracted_circuits'):
+            for circ in self.matrix_circuits.contracted_circuits:
                 hdmr_tests_norm.append(
                     HadammardTest(
-                        operators=[mat_i.circuit.inverse(), mat_j.circuit],
+                        operators=[circ],
                         apply_initial_state=self._ansatz,
                         apply_measurement=False,
                         shots = options["shots"]
                     )
                 )
+        else:
+            for ii_mat in range(len(self.matrix_circuits)):
+                mat_i = self.matrix_circuits[ii_mat]
+
+                for jj_mat in range(ii_mat + 1, len(self.matrix_circuits)):
+                    mat_j = self.matrix_circuits[jj_mat]
+                    hdmr_tests_norm.append(
+                        HadammardTest(
+                            operators=[mat_i.circuit.inverse(), mat_j.circuit],
+                            apply_initial_state=self._ansatz,
+                            apply_measurement=False,
+                            shots = options["shots"]
+                        )
+                    )
+
         return hdmr_tests_norm
 
     def _get_local_circuits(self, options) -> List[QuantumCircuit]:
@@ -541,8 +557,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # overall cost
         cost = 1.0 - np.real(sum_terms / norm)
-
-        # print("Cost function %f" % cost)
+        
         return cost
 
     def _compute_normalization_term(
@@ -685,7 +700,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         hdmr_tests_overlap: List,
         coefficient_matrix: np.ndarray,
         options: Dict,
-        batch: Optional[bool] = False
     ) -> Callable[[np.ndarray], Union[float, List[float]]]:
         """Generate the cost function of the minimazation process
 
@@ -708,85 +722,45 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "The ansatz must be parameterized, but has 0 free parameters."
             )
 
-        if batch:
+        def cost_evaluation(parameters):
 
-            def cost_evaluation(parameters):
+            # set the primtiive for the norm calculation
+            primitive = self.estimator
 
-                # set the primtiive for the norm calculation
-                primitive = self.estimator
+            # estimate the expected values of the norm circuits
+            hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
 
-                if batch:
-                    # estimate the expected values of the norm circuits
-                    hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
+            # in case the matrix decomposition has a circuit contraction
+            if hasattr(self.matrix_circuits, 'contraction_index_mapping'):
+                hdmr_values_norm = hdmr_values_norm[self.matrix_circuits.contraction_index_mapping] * \
+                    np.array(self.matrix_circuits.contraction_coefficient)
 
-                    # switch primitive to sampler if we do overlap test
-                    if options["use_overlap_test"]:
-                        primitive = self.sampler
-                    
-                    # estimate the expected values of the overlap circuits
-                    hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(self.estimator, parameters)
-
-                # compute the total cost
-                cost = self._assemble_cost_function(
-                    hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
-                )
-
-                # get the intermediate results if required
-                if self._callback is not None:
-                    self._eval_count += 1
-                    self._callback(self._eval_count, cost, parameters)
-                else:
-                    self._eval_count += 1
-                    print(
-                        f"VQLS Iteration {self._eval_count} Cost {cost}",
-                        end="\r",
-                        flush=True,
-                    )
-
-                return cost
+            # switch primitive to sampler if we do overlap test
+            if options["use_overlap_test"]:
+                primitive = self.sampler
             
-        else:
-             
-             def cost_evaluation(parameters):
+            # estimate the expected values of the overlap circuits
+            hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(primitive, parameters)
 
-                # estimate the expected values of the norm circuits
-                hdmr_values_norm = np.array(
-                    [hdrm.get_value(self.estimator, parameters) for hdrm in hdmr_tests_norm]
+            # compute the total cost
+            cost = self._assemble_cost_function(
+                hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
+            )
+
+            # get the intermediate results if required
+            if self._callback is not None:
+                self._eval_count += 1
+                self._callback(self._eval_count, cost, parameters)
+            else:
+                self._eval_count += 1
+                print(
+                    f"VQLS Iteration {self._eval_count} Cost {cost}",
+                    end="\r",
+                    flush=True,
                 )
 
-                if options["use_overlap_test"]:
-                    hdmr_values_overlap = np.array(
-                        [
-                            hdrm.get_value(self.sampler, parameters)
-                            for hdrm in hdmr_tests_overlap
-                        ]
-                    )
-                else:
-                    hdmr_values_overlap = np.array(
-                        [
-                            hdrm.get_value(self.estimator, parameters)
-                            for hdrm in hdmr_tests_overlap
-                        ]
-                    )
-                # compute the total cost
-                cost = self._assemble_cost_function(
-                    hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
-                )
-
-                # get the intermediate results if required
-                if self._callback is not None:
-                    self._eval_count += 1
-                    self._callback(self._eval_count, cost, parameters)
-                else:
-                    self._eval_count += 1
-                    print(
-                        f"VQLS Iteration {self._eval_count} Cost {cost}",
-                        end="\r",
-                        flush=True,
-                    )
-
-                return cost
-
+            return cost
+            
         return cost_evaluation
 
     def _validate_solve_options(self, options: Union[Dict, None]) -> Dict:
@@ -820,11 +794,10 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "Please provide a sampler primitives when using Hadamard Overlap test"
             )
 
-        valid_matrix_decomposition = ["symmetric", "pauli"]
+        valid_matrix_decomposition = ["symmetric", "pauli", "contracted_pauli"]
         if options["matrix_decomposition"] not in valid_matrix_decomposition:
             raise ValueError(
-                "matrix decomposition {k} not recognized, \
-                    valid keys are {valid_matrix_decomposition}"
+                f"matrix decomposition {k} not recognized, valid keys are {valid_matrix_decomposition}"
             )
 
         return options

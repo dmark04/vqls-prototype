@@ -1,12 +1,16 @@
 """Hadammard test."""
 
 from typing import Optional, List, Union
-from qiskit import QuantumCircuit, QuantumRegister
+from qiskit import QuantumCircuit, QuantumRegister, transpile
 from qiskit.algorithms.exceptions import AlgorithmError
 from qiskit.opflow import TensoredOp
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
+
+from types import SimpleNamespace
+
+
 
 class BatchHadammardTest:
     r"""Class that execute batches of Hadammard Test"""
@@ -26,7 +30,7 @@ class BatchHadammardTest:
         self.post_processing = hdmr_list[0].post_processing
         self.shots = hdmr_list[0].shots
 
-    def get_values(self, primitive, parameter_sets: List) -> List:
+    def get_values(self, primitive, parameter_sets: List, zne_strategy=None) -> List:
         """Compute the value of the test
 
         Args:
@@ -40,12 +44,22 @@ class BatchHadammardTest:
         ncircuits = len(self.circuits)
 
         try:
-            job = primitive.run(
-                self.circuits,
-                self.observable,
-                [parameter_sets] * ncircuits,
-                # shots=self.shots
-            )
+            if zne_strategy is None:
+                job = primitive.run(
+                    self.circuits,
+                    self.observable,
+                    [parameter_sets] * ncircuits,
+                    shots=self.shots
+                )
+            else:
+                job = primitive.run(
+                    self.circuits,
+                    self.observable,
+                    [parameter_sets] * ncircuits,
+                    shots=self.shots,
+                    zne_strategy = zne_strategy
+                )
+
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
@@ -133,6 +147,7 @@ class HadammardTest:
         # number of shots
         self.shots = shots
 
+
     def _build_circuit(
         self,
         operators: List[QuantumCircuit],
@@ -188,6 +203,7 @@ class HadammardTest:
                     circuit.append(operator.control(1), list(range(0, self.num_qubits)))
                 else:
                     circuit.append(operator, list(range(0, self.num_qubits)))
+
             if use_barrier:
                 circuit.barrier()
 
@@ -230,7 +246,7 @@ class HadammardTest:
             [1.0 - 2.0 * val for val in estimator_result.values]
         ).astype("complex128")
 
-    def get_value(self, estimator, parameter_sets: List) -> List:
+    def get_value(self, estimator, parameter_sets: List, zne_strategy = None) -> List:
         """Compute the value of the test
 
         Args:
@@ -244,12 +260,21 @@ class HadammardTest:
         ncircuits = len(self.circuits)
 
         try:
-            job = estimator.run(
-                self.circuits,
-                [self.observable] * ncircuits,
-                [parameter_sets] * ncircuits,
-                # shots = self.shots
-            )
+            if zne_strategy is None:
+                job = estimator.run(
+                    self.circuits,
+                    [self.observable] * ncircuits,
+                    [parameter_sets] * ncircuits,
+                    shots = self.shots
+                )
+            else:
+                job = estimator.run(
+                    self.circuits,
+                    [self.observable] * ncircuits,
+                    [parameter_sets] * ncircuits,
+                    shots = self.shots,
+                    zne_strategy=zne_strategy
+                )
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
@@ -473,7 +498,7 @@ class HadammardOverlapTest:
         ncircuits = len(self.circuits)
         job = sampler.run(self.circuits, 
                           [parameter_sets] * ncircuits,
-                        #   shots=self.shots
+                          shots=self.shots
                         )
         results = self.post_processing(job.result())
         results *= np.array([1.0, 1.0j])
