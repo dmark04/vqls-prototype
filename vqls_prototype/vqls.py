@@ -34,14 +34,16 @@ from .matrix_decomposition import (
     SymmetricDecomposition,
     MatrixDecomposition,
     PauliDecomposition,
-    ContractedPauliDecomposition,
 )
+
+from .optimized_matrix_decomposition import OptimizedPauliDecomposition
 from .hadamard_test import (
     HadammardTest,
     HadammardOverlapTest,
     BatchHadammardTest,
 )
 
+from 
 from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
 
 
@@ -347,7 +349,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 )
             decomposition = {
                 "pauli": PauliDecomposition,
-                "contracted_pauli": ContractedPauliDecomposition,
+                "contracted_pauli": OptimizedPauliDecomposition,
                 "symmetric": SymmetricDecomposition,
             }[options["matrix_decomposition"]]
             self.matrix_circuits = decomposition(matrix=matrix)
@@ -396,7 +398,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         hdmr_tests_norm = []
 
         # if the amtrix has qwc groups
-        if type(self.matrix_circuits) == ContractedPauliDecomposition:
+        if type(self.matrix_circuits) == OptimizedPauliDecomposition:
             for circ in self.matrix_circuits.qwc_groups_shared_basis_transformation:
                 hdmr_tests_norm.append(
                     DirectHadamardTest(
@@ -710,33 +712,33 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return out
 
-    def _post_process_contracted_norm_values(self, hdmr_values_norm):
-        """Post process the measurement obtained with the direct
+    # def _post_process_contracted_norm_values(self, hdmr_values_norm):
+    #     """Post process the measurement obtained with the direct
 
-        Args:
-            hdmr_values_norm (list): list of measrurement values
-        """
-        if hasattr(self.matrix_circuits, "qwc_groups_index_mapping"):
-            hdmr_values_norm = hdmr_values_norm[
-                self.matrix_circuits.qwc_groups_index_mapping
-            ]
-            hdmr_values_norm = np.array(
-                [
-                    np.dot(ev, val)
-                    for ev, val in zip(
-                        self.matrix_circuits.qwc_groups_eigenvalues,
-                        hdmr_values_norm,
-                    )
-                ]
-            )
+    #     Args:
+    #         hdmr_values_norm (list): list of measrurement values
+    #     """
+    #     if hasattr(self.matrix_circuits, "qwc_groups_index_mapping"):
+    #         hdmr_values_norm = hdmr_values_norm[
+    #             self.matrix_circuits.qwc_groups_index_mapping
+    #         ]
+    #         hdmr_values_norm = np.array(
+    #             [
+    #                 np.dot(ev, val)
+    #                 for ev, val in zip(
+    #                     self.matrix_circuits.qwc_groups_eigenvalues,
+    #                     hdmr_values_norm,
+    #                 )
+    #             ]
+    #         )
 
-        # in case the matrix decomposition has a circuit contraction
-        if hasattr(self.matrix_circuits, "contraction_index_mapping"):
-            hdmr_values_norm = hdmr_values_norm[
-                self.matrix_circuits.contraction_index_mapping
-            ] * np.array(self.matrix_circuits.contraction_coefficient)
+    #     # in case the matrix decomposition has a circuit contraction
+    #     if hasattr(self.matrix_circuits, "contraction_index_mapping"):
+    #         hdmr_values_norm = hdmr_values_norm[
+    #             self.matrix_circuits.contraction_index_mapping
+    #         ] * np.array(self.matrix_circuits.contraction_coefficient)
 
-        return hdmr_values_norm
+    #     return hdmr_values_norm
 
     def get_cost_evaluation_function(
         self,
@@ -768,13 +770,15 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         def cost_evaluation(parameters):
             # compute the values of the norm with contracted Pauli decomposition
-            if type(self.matrix_circuits) == ContractedPauliDecomposition:
+            if type(self.matrix_circuits) == OptimizedPauliDecomposition:
                 hdmr_values_norm = BatchDirectHadammardTest(hdmr_tests_norm).get_values(
                     self.sampler, parameters
                 )
 
-                hdmr_values_norm = self._post_process_contracted_norm_values(
-                    hdmr_values_norm
+                hdmr_values_norm = (
+                    self.matrix_circuits.post_process_contracted_norm_values(
+                        hdmr_values_norm
+                    )
                 )
 
             # compute the norm with other decomposition
