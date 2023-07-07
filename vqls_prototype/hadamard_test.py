@@ -11,15 +11,11 @@ import numpy.typing as npt
 from types import SimpleNamespace
 
 
-
 class BatchHadammardTest:
     r"""Class that execute batches of Hadammard Test"""
 
-    def __init__(
-        self,
-        hdmr_list: List
-    ):
-        """Create a single container that computes many hadamard tests 
+    def __init__(self, hdmr_list: List):
+        """Create a single container that computes many hadamard tests
 
         Args:
             hdrm_list (List): A list of HadamardTest instances
@@ -49,7 +45,7 @@ class BatchHadammardTest:
                     self.circuits,
                     self.observable,
                     [parameter_sets] * ncircuits,
-                    shots=self.shots
+                    shots=self.shots,
                 )
             else:
                 job = primitive.run(
@@ -57,7 +53,7 @@ class BatchHadammardTest:
                     self.observable,
                     [parameter_sets] * ncircuits,
                     shots=self.shots,
-                    zne_strategy = zne_strategy
+                    zne_strategy=zne_strategy,
                 )
 
             results = self.post_processing(job.result())
@@ -65,8 +61,9 @@ class BatchHadammardTest:
             raise AlgorithmError(
                 "The primitive to evaluate the Hadammard Test failed!"
             ) from exc
-        results *= np.array([1.0, 1.0j]*(ncircuits//2))
-        return results.reshape(-1,2).sum(1).reshape(-1)
+        results *= np.array([1.0, 1.0j] * (ncircuits // 2))
+        return results.reshape(-1, 2).sum(1).reshape(-1)
+
 
 class HadammardTest:
     r"""Class to compute the Hadamard Test"""
@@ -78,7 +75,7 @@ class HadammardTest:
         apply_control_to_operator: Optional[Union[bool, List[bool]]] = True,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = False,
-        shots: Optional[int] = 4000
+        shots: Optional[int] = 4000,
     ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
@@ -146,7 +143,6 @@ class HadammardTest:
 
         # number of shots
         self.shots = shots
-
 
     def _build_circuit(
         self,
@@ -242,11 +238,11 @@ class HadammardTest:
         Returns:
             npt.NDArray[np.cdouble]: value of the test
         """
-        return np.array(
-            [1.0 - 2.0 * val for val in estimator_result.values]
-        ).astype("complex128")
+        return np.array([1.0 - 2.0 * val for val in estimator_result.values]).astype(
+            "complex128"
+        )
 
-    def get_value(self, estimator, parameter_sets: List, zne_strategy = None) -> List:
+    def get_value(self, estimator, parameter_sets: List, zne_strategy=None) -> List:
         """Compute the value of the test
 
         Args:
@@ -265,15 +261,15 @@ class HadammardTest:
                     self.circuits,
                     [self.observable] * ncircuits,
                     [parameter_sets] * ncircuits,
-                    shots = self.shots
+                    shots=self.shots,
                 )
             else:
                 job = estimator.run(
                     self.circuits,
                     [self.observable] * ncircuits,
                     [parameter_sets] * ncircuits,
-                    shots = self.shots,
-                    zne_strategy=zne_strategy
+                    shots=self.shots,
+                    zne_strategy=zne_strategy,
                 )
             results = self.post_processing(job.result())
         except Exception as exc:
@@ -294,7 +290,7 @@ class HadammardOverlapTest:
         use_barrier: Optional[bool] = False,
         apply_initial_state: Optional[QuantumCircuit] = None,
         apply_measurement: Optional[bool] = True,
-        shots: Optional[int] = 4000
+        shots: Optional[int] = 4000,
     ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
@@ -484,7 +480,7 @@ class HadammardOverlapTest:
             output.append(proba_0 - proba_1)
 
         return np.array(output).astype("complex128")
-    
+
     def get_value(self, sampler, parameter_sets: List) -> float:
         """Compute and return the value of Hadmard overlap test
 
@@ -496,10 +492,7 @@ class HadammardOverlapTest:
             float: value of the overlap hadammard test
         """
         ncircuits = len(self.circuits)
-        job = sampler.run(self.circuits, 
-                          [parameter_sets] * ncircuits,
-                          shots=self.shots
-                        )
+        job = sampler.run(self.circuits, [parameter_sets] * ncircuits, shots=self.shots)
         results = self.post_processing(job.result())
         results *= np.array([1.0, 1.0j])
 

@@ -34,9 +34,15 @@ from .matrix_decomposition import (
     SymmetricDecomposition,
     MatrixDecomposition,
     PauliDecomposition,
-    ContractedPauliDecomposition
+    ContractedPauliDecomposition,
 )
-from .hadamard_test import HadammardTest, HadammardOverlapTest, BatchHadammardTest
+from .hadamard_test import (
+    HadammardTest,
+    HadammardOverlapTest,
+    BatchHadammardTest,
+)
+
+from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
 
 
 @dataclass
@@ -188,7 +194,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             "use_overlap_test": False,
             "use_local_cost_function": False,
             "matrix_decomposition": "symmetric",
-            "shots": 4000
+            "shots": 4000,
         }
 
     @property
@@ -380,7 +386,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return hdmr_tests_norm, hdmr_tests_overlap
 
-
     def _get_norm_circuits(self, options) -> List[QuantumCircuit]:
         """construct the circuit for the norm
 
@@ -390,17 +395,28 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         hdmr_tests_norm = []
 
-        # if the matrix decomposition has a contraction
-        if hasattr(self.matrix_circuits, 'contracted_circuits'):
-            for circ in self.matrix_circuits.contracted_circuits:
+        # if the amtrix has qwc groups
+        if type(self.matrix_circuits) == ContractedPauliDecomposition:
+            for circ in self.matrix_circuits.qwc_groups_shared_basis_transformation:
                 hdmr_tests_norm.append(
-                    HadammardTest(
-                        operators=[circ],
+                    DirectHadamardTest(
+                        operators=circ,
                         apply_initial_state=self._ansatz,
-                        apply_measurement=False,
-                        shots = options["shots"]
+                        shots=options["shots"],
                     )
                 )
+
+        # # if the matrix decomposition has a contraction
+        # elif hasattr(self.matrix_circuits, "contracted_circuits"):
+        #     for circ in self.matrix_circuits.contracted_circuits:
+        #         hdmr_tests_norm.append(
+        #             HadammardTest(
+        #                 operators=[circ],
+        #                 apply_initial_state=self._ansatz,
+        #                 apply_measurement=False,
+        #                 shots=options["shots"],
+        #             )
+        #         )
         else:
             for ii_mat in range(len(self.matrix_circuits)):
                 mat_i = self.matrix_circuits[ii_mat]
@@ -412,7 +428,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             operators=[mat_i.circuit.inverse(), mat_j.circuit],
                             apply_initial_state=self._ansatz,
                             apply_measurement=False,
-                            shots = options["shots"]
+                            shots=options["shots"],
                         )
                     )
 
@@ -453,7 +469,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             apply_control_to_operator=[True, True, False, True, True],
                             apply_initial_state=self.ansatz,
                             apply_measurement=False,
-                            shots = options["shots"]
+                            shots=options["shots"],
                         )
                     )
         return hdmr_tests_overlap
@@ -488,7 +504,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                             ],
                             apply_initial_state=self.ansatz,
                             apply_measurement=True,
-                            shots=options["shots"]
+                            shots=options["shots"],
                         )
                     )
             return hdmr_overlap_tests
@@ -504,7 +520,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                         self.vector_circuit.inverse(),
                     ],
                     apply_measurement=False,
-                    shots=options["shots"]
+                    shots=options["shots"],
                 )
             )
 
@@ -557,7 +573,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         # overall cost
         cost = 1.0 - np.real(sum_terms / norm)
-        
+
         return cost
 
     def _compute_normalization_term(
@@ -582,7 +598,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
         # hdrm_values here contains the values of the <0|V Ai* Aj V|0>  with j>i
         # out = np.copy(hdmr_values)
         out = hdmr_values
-        
+
         # we multiply hdmr values by the triup coeff matrix and sum
         out *= coeff_matrix[np.triu_indices_from(coeff_matrix, k=1)]
         out = out.sum()
@@ -694,6 +710,34 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return out
 
+    def _post_process_contracted_norm_values(self, hdmr_values_norm):
+        """Post process the measurement obtained with the direct
+
+        Args:
+            hdmr_values_norm (list): list of measrurement values
+        """
+        if hasattr(self.matrix_circuits, "qwc_groups_index_mapping"):
+            hdmr_values_norm = hdmr_values_norm[
+                self.matrix_circuits.qwc_groups_index_mapping
+            ]
+            hdmr_values_norm = np.array(
+                [
+                    np.dot(ev, val)
+                    for ev, val in zip(
+                        self.matrix_circuits.qwc_groups_eigenvalues,
+                        hdmr_values_norm,
+                    )
+                ]
+            )
+
+        # in case the matrix decomposition has a circuit contraction
+        if hasattr(self.matrix_circuits, "contraction_index_mapping"):
+            hdmr_values_norm = hdmr_values_norm[
+                self.matrix_circuits.contraction_index_mapping
+            ] * np.array(self.matrix_circuits.contraction_coefficient)
+
+        return hdmr_values_norm
+
     def get_cost_evaluation_function(
         self,
         hdmr_tests_norm: List,
@@ -723,24 +767,32 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             )
 
         def cost_evaluation(parameters):
+            # compute the values of the norm with contracted Pauli decomposition
+            if type(self.matrix_circuits) == ContractedPauliDecomposition:
+                hdmr_values_norm = BatchDirectHadammardTest(hdmr_tests_norm).get_values(
+                    self.sampler, parameters
+                )
 
-            # set the primtiive for the norm calculation
-            primitive = self.estimator
+                hdmr_values_norm = self._post_process_contracted_norm_values(
+                    hdmr_values_norm
+                )
 
-            # estimate the expected values of the norm circuits
-            hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(primitive, parameters)
-
-            # in case the matrix decomposition has a circuit contraction
-            if hasattr(self.matrix_circuits, 'contraction_index_mapping'):
-                hdmr_values_norm = hdmr_values_norm[self.matrix_circuits.contraction_index_mapping] * \
-                    np.array(self.matrix_circuits.contraction_coefficient)
+            # compute the norm with other decomposition
+            else:
+                # estimate the expected values of the norm circuits
+                hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(
+                    self.estimator, parameters
+                )
 
             # switch primitive to sampler if we do overlap test
+            primitive = self.estimator
             if options["use_overlap_test"]:
                 primitive = self.sampler
-            
+
             # estimate the expected values of the overlap circuits
-            hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(primitive, parameters)
+            hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(
+                primitive, parameters
+            )
 
             # compute the total cost
             cost = self._assemble_cost_function(
@@ -760,7 +812,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 )
 
             return cost
-            
+
         return cost_evaluation
 
     def _validate_solve_options(self, options: Union[Dict, None]) -> Dict:
