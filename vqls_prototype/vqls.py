@@ -43,7 +43,6 @@ from .hadamard_test import (
     BatchHadammardTest,
 )
 
-from 
 from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
 
 
