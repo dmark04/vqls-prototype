@@ -98,7 +98,7 @@ class DirectHadamardTest:
 
     def _build_circuit(
         self,
-        operator: List[QuantumCircuit],
+        operator: QuantumCircuit,
         apply_initial_state: Optional[QuantumCircuit] = None,
     ) -> QuantumCircuit:
         """build the quantum circuits
@@ -115,8 +115,11 @@ class DirectHadamardTest:
         Returns:
             QuantumCircuit: quamtum circuit required to compute the Hadammard Test.
         """
-
-        circuit = apply_initial_state.compose(operator)
+        if apply_initial_state is not None:
+            circuit = apply_initial_state.compose(operator)
+        else:
+            circuit = QuantumCircuit(operator.num_qubits)
+            circuit.append(operator, range(operator.num_qubits))
         circuit.measure_all()
 
         return circuit

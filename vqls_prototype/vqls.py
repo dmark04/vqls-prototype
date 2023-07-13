@@ -36,13 +36,16 @@ from .matrix_decomposition import (
     PauliDecomposition,
 )
 
-from .optimized_matrix_decomposition import OptimizedPauliDecomposition
+from .optimized_matrix_decomposition import (
+    OptimizedPauliDecomposition,
+    ContractedPauliDecomposition,
+)
 from .hadamard_test import (
     HadammardTest,
-    HadammardOverlapTest,
     BatchHadammardTest,
 )
 
+from .hadamard_overlap_test import HadammardOverlapTest, BatchHadammardOverlapTest
 from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
 
 
@@ -348,7 +351,8 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 )
             decomposition = {
                 "pauli": PauliDecomposition,
-                "contracted_pauli": OptimizedPauliDecomposition,
+                "contracted_pauli": ContractedPauliDecomposition,
+                "optimized_pauli": OptimizedPauliDecomposition,
                 "symmetric": SymmetricDecomposition,
             }[options["matrix_decomposition"]]
             self.matrix_circuits = decomposition(matrix=matrix)
@@ -396,7 +400,7 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         hdmr_tests_norm = []
 
-        # if the amtrix has qwc groups
+        # use measurement optimized Pauli decomposition
         if type(self.matrix_circuits) == OptimizedPauliDecomposition:
             for circ in self.matrix_circuits.qwc_groups_shared_basis_transformation:
                 hdmr_tests_norm.append(
@@ -407,17 +411,19 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                     )
                 )
 
-        # # if the matrix decomposition has a contraction
-        # elif hasattr(self.matrix_circuits, "contracted_circuits"):
-        #     for circ in self.matrix_circuits.contracted_circuits:
-        #         hdmr_tests_norm.append(
-        #             HadammardTest(
-        #                 operators=[circ],
-        #                 apply_initial_state=self._ansatz,
-        #                 apply_measurement=False,
-        #                 shots=options["shots"],
-        #             )
-        #         )
+        # use contracted Pauli Decomposition
+        elif type(self.matrix_circuits) == ContractedPauliDecomposition:
+            for circ in self.matrix_circuits.contracted_circuits:
+                hdmr_tests_norm.append(
+                    HadammardTest(
+                        operators=[circ],
+                        apply_initial_state=self._ansatz,
+                        apply_measurement=False,
+                        shots=options["shots"],
+                    )
+                )
+
+        # if we use the bare decomposition to create the circuits
         else:
             for ii_mat in range(len(self.matrix_circuits)):
                 mat_i = self.matrix_circuits[ii_mat]
@@ -711,34 +717,6 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
 
         return out
 
-    # def _post_process_contracted_norm_values(self, hdmr_values_norm):
-    #     """Post process the measurement obtained with the direct
-
-    #     Args:
-    #         hdmr_values_norm (list): list of measrurement values
-    #     """
-    #     if hasattr(self.matrix_circuits, "qwc_groups_index_mapping"):
-    #         hdmr_values_norm = hdmr_values_norm[
-    #             self.matrix_circuits.qwc_groups_index_mapping
-    #         ]
-    #         hdmr_values_norm = np.array(
-    #             [
-    #                 np.dot(ev, val)
-    #                 for ev, val in zip(
-    #                     self.matrix_circuits.qwc_groups_eigenvalues,
-    #                     hdmr_values_norm,
-    #                 )
-    #             ]
-    #         )
-
-    #     # in case the matrix decomposition has a circuit contraction
-    #     if hasattr(self.matrix_circuits, "contraction_index_mapping"):
-    #         hdmr_values_norm = hdmr_values_norm[
-    #             self.matrix_circuits.contraction_index_mapping
-    #         ] * np.array(self.matrix_circuits.contraction_coefficient)
-
-    #     return hdmr_values_norm
-
     def get_cost_evaluation_function(
         self,
         hdmr_tests_norm: List,
@@ -768,12 +746,25 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             )
 
         def cost_evaluation(parameters):
-            # compute the values of the norm with contracted Pauli decomposition
-            if type(self.matrix_circuits) == OptimizedPauliDecomposition:
-                hdmr_values_norm = BatchDirectHadammardTest(hdmr_tests_norm).get_values(
-                    self.sampler, parameters
+            primitive = self.estimator
+
+            # compute the values of the norm with optimized/contracted Pauli decomposition
+            if type(self.matrix_circuits) in [
+                ContractedPauliDecomposition,
+                OptimizedPauliDecomposition,
+            ]:
+                # switch to sampler primitve if we do measurement optimization
+                BatchTest = BatchHadammardTest
+                if type(self.matrix_circuits) == OptimizedPauliDecomposition:
+                    primitive = self.sampler
+                    BatchTest = BatchDirectHadammardTest
+
+                # compute the hadammard values ofthe unique circuits
+                hdmr_values_norm = BatchTest(hdmr_tests_norm).get_values(
+                    primitive, parameters
                 )
 
+                # postprocess the values
                 hdmr_values_norm = (
                     self.matrix_circuits.post_process_contracted_norm_values(
                         hdmr_values_norm
@@ -784,16 +775,18 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
             else:
                 # estimate the expected values of the norm circuits
                 hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(
-                    self.estimator, parameters
+                    primitive, parameters
                 )
 
             # switch primitive to sampler if we do overlap test
             primitive = self.estimator
+            BatchTest = BatchHadammardTest
             if options["use_overlap_test"]:
                 primitive = self.sampler
+                BatchTest = BatchHadammardOverlapTest
 
             # estimate the expected values of the overlap circuits
-            hdmr_values_overlap = BatchHadammardTest(hdmr_tests_overlap).get_values(
+            hdmr_values_overlap = BatchTest(hdmr_tests_overlap).get_values(
                 primitive, parameters
             )
 
@@ -849,7 +842,12 @@ class VQLS(VariationalAlgorithm, VariationalLinearSolver):
                 "Please provide a sampler primitives when using Hadamard Overlap test"
             )
 
-        valid_matrix_decomposition = ["symmetric", "pauli", "contracted_pauli"]
+        valid_matrix_decomposition = [
+            "symmetric",
+            "pauli",
+            "contracted_pauli",
+            "optimized_pauli",
+        ]
         if options["matrix_decomposition"] not in valid_matrix_decomposition:
             raise ValueError(
                 f"matrix decomposition {k} not recognized, valid keys are {valid_matrix_decomposition}"
