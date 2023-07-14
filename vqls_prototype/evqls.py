@@ -38,7 +38,7 @@ from .hadamard_test.direct_hadamard_test import (
     DirectHadamardTest,
     BatchDirectHadammardTest,
 )
-from tomography.tomography import get_relative_amplitude_sign
+from .tomography.tomography import get_relative_amplitude_sign
 
 
 class EVQLS(VQLS):
