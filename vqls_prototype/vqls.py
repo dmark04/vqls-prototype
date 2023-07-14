@@ -30,23 +30,23 @@ from .variational_linear_solver import (
     VariationalLinearSolver,
     VariationalLinearSolverResult,
 )
-from .matrix_decomposition import (
+from .matrix_decomposition.matrix_decomposition import (
     SymmetricDecomposition,
     MatrixDecomposition,
     PauliDecomposition,
 )
 
-from .optimized_matrix_decomposition import (
+from .matrix_decomposition.optimized_matrix_decomposition import (
     OptimizedPauliDecomposition,
     ContractedPauliDecomposition,
 )
-from .hadamard_test import (
+from .hadamard_test.hadamard_test import (
     HadammardTest,
     BatchHadammardTest,
 )
 
-from .hadamard_overlap_test import HadammardOverlapTest, BatchHadammardOverlapTest
-from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
+from .hadamard_test.hadamard_overlap_test import HadammardOverlapTest, BatchHadammardOverlapTest
+from .hadamard_test.direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
 
 
 @dataclass

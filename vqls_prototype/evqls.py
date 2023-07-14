@@ -21,34 +21,27 @@ from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_initial_point,
 )
 
-
 from qiskit.quantum_info import Operator
 
 from .variational_linear_solver import (
     VariationalLinearSolverResult,
 )
-from .matrix_decomposition import (
-    SymmetricDecomposition,
-    MatrixDecomposition,
-    PauliDecomposition,
-)
 
-from .optimized_matrix_decomposition import (
+
+from .matrix_decomposition.optimized_matrix_decomposition import (
     OptimizedPauliDecomposition,
-    ContractedPauliDecomposition,
-)
-from .hadamard_test import (
-    HadammardTest,
-    BatchHadammardTest,
 )
 
 from .vqls import VQLS
-from .hadamard_overlap_test import HadammardOverlapTest, BatchHadammardOverlapTest
-from .direct_hadamard_test import DirectHadamardTest, BatchDirectHadammardTest
-from .tomography import get_relative_amplitude_sign
+
+from .hadamard_test.direct_hadamard_test import (
+    DirectHadamardTest,
+    BatchDirectHadammardTest,
+)
+from tomography.tomography import get_relative_amplitude_sign
 
 
-class VQLS_MO(VQLS):
+class EVQLS(VQLS):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
     financial models, fluid simulation or numerical field calculation. The problem can be defined

@@ -17,17 +17,7 @@ Variational Quantum Linear Solver
 """
 
 from .vqls import VQLS, VQLSLog
-from .hadamard_test import HadammardTest
-from .hadamard_overlap_test import HadammardOverlapTest
-from .matrix_decomposition import SymmetricDecomposition, PauliDecomposition
-from .direct_hadamard_test import DirectHadamardTest
+from .evqls import EVQLS
 
-__all__ = [
-    "VQLS",
-    "VQLSLog",
-    "HadammardTest",
-    "HadammardOverlapTest",
-    "SymmetricDecomposition",
-    "PauliDecomposition",
-    "DirectHadamardTest",
-]
+
+__all__ = ["VQLS", "VQLSLog", "EVQLS"]
