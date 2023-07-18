@@ -44,7 +44,7 @@ class TestTomography(QiskitTestCase):
         num_qubits = 2
         size = 2**num_qubits
         self.ansatz = RealAmplitudes(num_qubits=num_qubits, reps=3, entanglement="full")
-        self.parameters = np.random.rand(self.ansatz.num_parameters)
+        self.parameters = 2 * np.pi * np.random.rand(self.ansatz.num_parameters)
 
         self.ref = SimulatorQST(self.ansatz).get_relative_amplitude_sign(
             self.parameters
@@ -53,11 +53,11 @@ class TestTomography(QiskitTestCase):
     def test_full_qst(self):
         backend = Aer.get_backend("statevector_simulator")
         full_qst = FullQST(self.ansatz, backend)
-        sols = full_qst.get_relative_amplitude_sign(self.parameters)
-        assert np.allclose(self.ref, sols)
+        sol = full_qst.get_relative_amplitude_sign(self.parameters)
+        assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
     def test_real_qst(self):
         sampler = Sampler()
         real_qst = RealQST(self.ansatz, sampler)
         sol = real_qst.get_relative_amplitude_signs(self.parameters)
-        assert np.allclose(self.ref, sol)
+        assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)

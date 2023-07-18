@@ -12,6 +12,9 @@ class RealQST:
             circuit (QuantumCircuit): the base circuit we want to evaluate
             sampler (Sampler): A sampler primitive
         """
+        self.root = []
+        self.leaf = []
+
         self.circuit = circuit
         self.num_qubits = circuit.num_qubits
         self.size = 2**self.num_qubits
@@ -31,13 +34,17 @@ class RealQST:
                 _type_: _description_
             """
             trees = []
+            level_root, level_leaf = [], []
             for i in range(int(self.size / 2)):
                 tree = treelib.Tree()
                 a, b = 2 * (i), 2 * (i) + 1
                 tree.create_node(a, a, data=1)
                 tree.create_node(b, b, parent=a)
                 trees.append(tree)
-            return trees
+
+                level_leaf.append(b)
+                level_root.append(a)
+            return trees, level_root, level_leaf
 
         def link_trees(trees):
             """_summary_
@@ -46,16 +53,29 @@ class RealQST:
                 trees (_type_): _description_
             """
             ntree = len(trees)
+            level_root, level_leaf = [], []
             for iter in range(1, self.num_qubits):
+                root, leaf = [], []
                 for iroot in range(0, int(ntree), 2**iter):
                     new_root = trees[iroot].root
                     new_leaf = iroot + 2 ** (iter - 1)
                     trees[iroot].paste(new_root, trees[new_leaf])
 
-            return trees[0]
+                    root.append(trees[iroot].root)
+                    leaf.append(trees[new_leaf].root)
 
-        tree_list = init_tree()
-        return link_trees(tree_list)
+                level_root.append(root)
+                level_leaf.append(leaf)
+            return trees[0], level_root, level_leaf
+
+        tree_list, root, leaf = init_tree()
+        self.root.append(root)
+        self.leaf.append(leaf)
+        tree, root, leaf = link_trees(tree_list)
+        self.root += root
+        self.leaf += leaf
+
+        return tree
 
     def get_path(self):
         """_summary_"""
@@ -106,21 +126,28 @@ class RealQST:
             samples (_type_): _description_
         """
         # init the weights
-        signs = np.sign(2 * samples[1] - samples[0])
-        weights = np.zeros_like(signs)
-        weights[1::2] = signs[::2]
+        # signs = np.sign(2 * samples[1] - samples[0])
+        # weights = np.zeros_like(signs)
+        # weights[1::2] = signs[::2]
 
         # root
+        weights = np.zeros_like(samples[0])
         weights[0] = 1
 
         # link the weights
-        nblocks = self.size // 2
-        for iter in range(1, self.num_qubits):
-            for iroot in range(0, nblocks, 2**iter):
-                signs = np.sign(2 * samples[iter + 1] - samples[0])
-                new_root = 2 * iroot
-                new_leaf = 2 * (iroot + 2 ** (iter - 1))
-                weights[new_leaf] = signs[new_root]
+        # nblocks = self.size // 2
+        for iter in range(0, self.num_qubits):
+            # signs = np.sign(2 * samples[iter + 1] - samples[0])
+            # for i, iroot in enumerate(range(0, nblocks, 2**iter)):
+            # new_root = 2 * iroot
+            # new_leaf = 2 * (iroot + 2 ** (iter - 1))
+            # weights[new_leaf] = signs[new_root]
+            roots = self.root[iter]
+            leafs = self.leaf[iter]
+            signs = np.sign(
+                2 * samples[iter + 1][roots] - samples[0][roots] - samples[0][leafs]
+            )
+            weights[leafs] = signs
 
         return weights
 

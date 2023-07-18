@@ -165,6 +165,7 @@ class EVQLS(VQLS):
             callback,
         )
 
+        self.tomography_calculator = None
         self.default_solve_options = {
             "use_overlap_test": False,
             "use_local_cost_function": False,
@@ -416,8 +417,10 @@ class EVQLS(VQLS):
             self.tomography_calculator = RealQST(self._ansatz, self.sampler)
         elif tomography == "full_qst":
             self.tomography_calculator = FullQST(
-                self._ansatz, Aer.get_backend("aer_simulator")
+                self._ansatz, Aer.get_backend("statevector_simulator")
             )
+        else:
+            raise ValueError("tomography method not recognized")
 
     def solve(
         self,
