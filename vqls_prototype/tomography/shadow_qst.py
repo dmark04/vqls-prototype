@@ -5,12 +5,114 @@ from qiskit_experiments.framework import ParallelExperiment
 from qiskit_experiments.library import StateTomography
 
 
-def get_relative_amplitude_sign(circuit, parameters):
-    """_summary_
+class ShadowQST:
+    def __init__(self, circuit, sampler, num_shadows):
+        self.circuit = circuit
+        self.num_qubits = circuit.num_qubits
+        self.sampler = sampler
+        self.num_shadows = num_shadows
 
-    Args:
-        circuit (_type_): _description_
-        parameters (_type_): _description_
-        backend (_type_): _description_
-    """
-    raise NotImplementedError("shadow qst not implemented")
+        # get the unique pauli strings we need
+        # with the number of shots per circuit
+        self.labels, self.counts = self.get_labels()
+
+        # create the circuits we need
+        self.list_circuits = self.get_circuits()
+        self.ncircuits = len(self.list_circuits)
+
+    @staticmethod
+    def bitGateMap(qc, g, qi):
+        """Map X/Y/Z string to qiskit ops"""
+        if g == "X":
+            qc.h(qi)
+        elif g == "Y":
+            qc.sdg(qi)
+            qc.h(qi)
+        elif g == "Z":
+            pass
+        else:
+            raise NotImplementedError(f"Unknown gate {g}")
+
+    @staticmethod
+    def Minv(N, X):
+        """inverse shadow channel"""
+        return ((2**N + 1.0)) * X - np.eye(2**N)
+
+    @staticmethod
+    def rotGate(g):
+        """produces gate U such that U|psi> is in Pauli basis g"""
+        if g == "X":
+            return 1 / np.sqrt(2) * np.array([[1.0, 1.0], [1.0, -1.0]])
+        elif g == "Y":
+            return 1 / np.sqrt(2) * np.array([[1.0, -1.0j], [1.0, 1.0j]])
+        elif g == "Z":
+            return np.eye(2)
+        else:
+            raise NotImplementedError(f"Unknown gate {g}")
+
+    def get_labels(self):
+        rng = np.random.default_rng(1717)
+        scheme = [
+            rng.choice(["X", "Y", "Z"], size=self.num_qubits)
+            for _ in range(self.num_shadows)
+        ]
+        return np.unique(scheme, axis=0, return_counts=True)
+
+    def get_circuits(self):
+        """_summary_"""
+        list_circuits = []
+        for bit_string in self.labels:
+            qc = self.circuit.copy()
+            for i, bit in enumerate(bit_string):
+                self.bitGateMap(qc, bit, i)
+            list_circuits.append(qc.measure_all(inplace=False))
+        return list_circuits
+
+    def get_samples(self, parameters):
+        """_summary_
+
+        Args:
+            sampler (_type_): _description_
+        """
+        results = (
+            self.sampler.run(self.list_circuits, [parameters] * self.ncircuits)
+            .result()
+            .quasi_dists
+        )
+        samples = []
+        for res in results:
+            proba = dict()
+            for k, v in res.items():
+                key = np.binary_repr(k, width=self.num_qubits)
+                val = int(self.num_shadows * v)
+                proba[key] = val
+            samples.append(proba)
+        return samples
+
+    def get_rho(self, samples):
+        shadows = []
+        shots = 0
+        for pauli_string, counts in zip(self.labels, samples):
+            # iterate over measurements
+            for bit, count in counts.items():
+                mat = 1.0
+                for i, bi in enumerate(bit[::-1]):
+                    b = self.rotGate(pauli_string[i])[int(bi), :]
+                    mat = np.kron(self.Minv(1, np.outer(b.conj(), b)), mat)
+                shadows.append(mat * count)
+                shots += count
+
+        return np.sum(shadows, axis=0) / (shots)
+
+    def get_relative_amplitude_sign(self, parameters):
+        """_summary_
+
+        Args:
+            circuit (_type_): _description_
+            parameters (_type_): _description_
+            backend (_type_): _description_
+        """
+
+        samples = self.get_samples(parameters)
+        rho = self.get_rho(samples)
+        return np.sign(rho[0, :].real)

@@ -12,14 +12,22 @@ class RealQST:
             circuit (QuantumCircuit): the base circuit we want to evaluate
             sampler (Sampler): A sampler primitive
         """
+        # store the roots/leaves of each level for faster processing
         self.root = []
         self.leaf = []
 
+        # circuit and size
         self.circuit = circuit
         self.num_qubits = circuit.num_qubits
         self.size = 2**self.num_qubits
+
+        # get the full connection tree
         self.tree = self.get_tree()
+
+        # get all the paths
         self.path_to_node = self.get_path()
+
+        # sampler and circuits
         self.sampler = sampler
         self.list_circuits = self.get_circuits()
         self.ncircuits = len(self.list_circuits)
@@ -104,7 +112,6 @@ class RealQST:
 
         Args:
             sampler (_type_): _description_
-            circuits (_type_): _description_
         """
         results = (
             self.sampler.run(self.list_circuits, [parameters] * self.ncircuits)
@@ -125,23 +132,12 @@ class RealQST:
         Args:
             samples (_type_): _description_
         """
-        # init the weights
-        # signs = np.sign(2 * samples[1] - samples[0])
-        # weights = np.zeros_like(signs)
-        # weights[1::2] = signs[::2]
-
         # root
         weights = np.zeros_like(samples[0])
         weights[0] = 1
 
         # link the weights
-        # nblocks = self.size // 2
         for iter in range(0, self.num_qubits):
-            # signs = np.sign(2 * samples[iter + 1] - samples[0])
-            # for i, iroot in enumerate(range(0, nblocks, 2**iter)):
-            # new_root = 2 * iroot
-            # new_leaf = 2 * (iroot + 2 ** (iter - 1))
-            # weights[new_leaf] = signs[new_root]
             roots = self.root[iter]
             leafs = self.leaf[iter]
             signs = np.sign(
