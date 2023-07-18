@@ -38,7 +38,9 @@ from .hadamard_test.direct_hadamard_test import (
     DirectHadamardTest,
     BatchDirectHadammardTest,
 )
-from .tomography.tomography import get_relative_amplitude_sign
+from .tomography.qst import FullQST
+from .tomography.simulator_qst import SimulatorQST
+from .tomography.real_qst import RealQST
 
 
 class EVQLS(VQLS):
@@ -164,6 +166,10 @@ class EVQLS(VQLS):
         )
 
         self.default_solve_options = {
+            "use_overlap_test": False,
+            "use_local_cost_function": False,
+            "matrix_decomposition": "optimized_pauli",
+            "tomography": "real_qst",
             "shots": 4000,
         }
 
@@ -340,7 +346,9 @@ class EVQLS(VQLS):
             )
 
             # post process the values for the overlap
-            sign_ansatz = self.get_ansatz_sign_vector(parameters)
+            sign_ansatz = self.tomography_calculator.get_relative_amplitude_sign(
+                parameters
+            )
             hdmr_values_overlap = self.matrix_circuits.get_overlap_values(
                 samples[num_norm_circuits:], sign_ansatz
             )
@@ -387,23 +395,29 @@ class EVQLS(VQLS):
                 if k not in options.keys():
                     options[k] = self.default_solve_options[k]
 
+        if options["use_overlap_test"] != False:
+            raise ValueError("Overlap test not implemented for evqls")
+        if options["use_local_cost_function"] != False:
+            raise ValueError("local cost function not implemented for evqls")
+        if options["matrix_decomposition"] != "optimized_pauli":
+            raise ValueError("Matrix decomposition must be optimied pauli for evqls")
+
         return options
 
-    def get_ansatz_sign_vector(self, parameters):
-        """_summary_
+    def _init_tomography(self, tomography: str):
+        """initialize the tomography calculator
 
         Args:
-            parameters (_type_): _description_
-
-        Returns:
-            _type_: _description_
+            tomography (str): the name of the tomography
         """
-        if hasattr(self._ansatz, "get_sign_vector"):
-            self._ansatz.get_sign_vector(parameters)
-
-        else:
-            backend = Aer.get_backend("aer_simulator")
-            return get_relative_amplitude_sign(self._ansatz, parameters, backend)
+        if tomography == "simulator":
+            self.tomography_calculator = SimulatorQST(self._ansatz)
+        elif tomography == "real_qst":
+            self.tomography_calculator = RealQST(self._ansatz, self.sampler)
+        elif tomography == "full_qst":
+            self.tomography_calculator = FullQST(
+                self._ansatz, Aer.get_backend("aer_simulator")
+            )
 
     def solve(
         self,
@@ -425,6 +439,9 @@ class EVQLS(VQLS):
 
         # validate the options
         options = self._validate_solve_options(options)
+
+        # intiialize the tomography
+        self._init_tomography(options["tomography"])
 
         # compute the circuits needed for the hadamard tests
         norm_circuits, overlap_circuits = self.construct_circuit(
