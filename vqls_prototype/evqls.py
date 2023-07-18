@@ -41,6 +41,7 @@ from .hadamard_test.direct_hadamard_test import (
 from .tomography.qst import FullQST
 from .tomography.simulator_qst import SimulatorQST
 from .tomography.real_qst import RealQST
+from .tomography.shadow_qst import ShadowQST
 
 
 class EVQLS(VQLS):
@@ -419,6 +420,8 @@ class EVQLS(VQLS):
             self.tomography_calculator = FullQST(
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
+        elif tomography == "shadow_qst":
+            self.tomography_calculator = ShadowQst(self._ansatz, self.sampler, 1000)
         else:
             raise ValueError("tomography method not recognized")
 
