@@ -19,3 +19,13 @@ class SimulatorQST:
         """
         state_vector = (Statevector(self.circuit.bind_parameters(parameters))).data.real
         return np.sign(state_vector)
+
+    def get_statevector(self, parameters):
+        """_summary_
+
+        Args:
+            circuit (_type_): _description_
+            parameters (_type_): _description_
+            backend (_type_): _description_
+        """
+        return (Statevector(self.circuit.bind_parameters(parameters))).data.real

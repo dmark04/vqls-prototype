@@ -137,7 +137,7 @@ class TestHadamard(QiskitTestCase):
 
         assert np.allclose(cost, self.cost_ref)
 
-    def test_Hybrid_QST_VQLS(self):
+    def test_optimized_pauli(self):
         """_summary_"""
 
         # set up the system

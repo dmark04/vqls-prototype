@@ -116,3 +116,28 @@ class ShadowQST:
         samples = self.get_samples(parameters)
         rho = self.get_rho(samples)
         return np.sign(rho[0, :].real)
+
+    def get_relative_amplitude_sign(self, parameters):
+        """_summary_
+
+        Args:
+            circuit (_type_): _description_
+            parameters (_type_): _description_
+            backend (_type_): _description_
+        """
+
+        samples = self.get_samples(parameters)
+        rho = self.get_rho(samples)
+        return np.sign(rho[0, :].real)
+
+    def get_statevector(self, parameters):
+        """_summary_
+
+        Args:
+            parameters (_type_): _description_
+        """
+        samples = self.get_samples(parameters)
+        rho = self.get_rho(samples)
+        signs = np.sign(rho[0, :].real)
+        amplitudes = np.sqrt(np.diag(rho).real)
+        return signs * amplitudes

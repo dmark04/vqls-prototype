@@ -147,17 +147,35 @@ class HTreeQST:
 
         return weights
 
-    def get_relative_amplitude_sign(self, parameters):
-        """_summary_
+    def get_signs(self, weights):
+        """Agregate the signs of the statevector
 
         Args:
-            circuit (_type_): _description_
-            parameters (_type_): _description_
-            backend (_type_): _description_
+            weights (np.array):
         """
-        samples = self.get_samples(parameters)
-        weights = self.get_weight(samples)
         signs = np.zeros_like(weights)
         for ip, path in enumerate(self.path_to_node):
             signs[ip] = weights[path].prod()
         return signs
+
+    def get_relative_amplitude_sign(self, parameters):
+        """_summary_
+
+        Args:
+            parameters (_type_): _description_
+        """
+        samples = self.get_samples(parameters)
+        weights = self.get_weight(samples)
+        return self.get_signs(weights)
+
+    def get_statevector(self, parameters):
+        """_summary_
+
+        Args:
+            parameters (_type_): _description_
+        """
+        samples = self.get_samples(parameters)
+        amplitudes = np.sqrt(samples[0])
+        weights = self.get_weight(samples)
+        signs = self.get_signs(weights)
+        return amplitudes * signs
