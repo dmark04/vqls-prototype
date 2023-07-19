@@ -3,7 +3,7 @@ import numpy as np
 import treelib
 
 
-class RealQST:
+class HTreeQST:
     def __init__(self, circuit, sampler):
         """Perform a QST for real valued state vector
         This needs only N additional circuits but require some posprocesing

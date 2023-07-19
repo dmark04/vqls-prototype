@@ -24,7 +24,7 @@ from qiskit.circuit.library import RealAmplitudes
 from qiskit.algorithms import optimizers as opt
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler
-from vqls_prototype import VQLS, VQLSLog, EVQLS
+from vqls_prototype import VQLS, VQLSLog, Hybrid_QST_VQLS
 
 
 from vqls_prototype.hadamard_test.hadamard_test import BatchHadammardTest
@@ -137,11 +137,11 @@ class TestHadamard(QiskitTestCase):
 
         assert np.allclose(cost, self.cost_ref)
 
-    def test_evqls(self):
+    def test_Hybrid_QST_VQLS(self):
         """_summary_"""
 
         # set up the system
-        vqls = EVQLS(
+        vqls = Hybrid_QST_VQLS(
             self.estimator,
             self.ansatz,
             self.optimizer,

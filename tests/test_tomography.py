@@ -11,27 +11,15 @@
 # that they have been altered from the originals.
 
 import numpy as np
-from numpy.testing import assert_allclose
-import pytest
-
-import unittest
 from qiskit.test import QiskitTestCase
 from qiskit.utils import algorithm_globals
 import numpy as np
 
 from qiskit import Aer
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.algorithms import optimizers as opt
-from qiskit.algorithms.optimizers import COBYLA
-from qiskit.primitives import Estimator, Sampler
-from vqls_prototype import VQLS, VQLSLog, EVQLS
+from qiskit.primitives import Sampler
 
-
-from vqls_prototype.hadamard_test.hadamard_test import BatchHadammardTest
-from vqls_prototype.hadamard_test.hadamard_overlap_test import BatchHadammardOverlapTest
-from vqls_prototype.hadamard_test.direct_hadamard_test import BatchDirectHadammardTest
-
-from vqls_prototype.tomography import FullQST, SimulatorQST, RealQST
+from vqls_prototype.tomography import FullQST, SimulatorQST, HTreeQST, ShadowQST
 
 
 class TestTomography(QiskitTestCase):
@@ -42,7 +30,6 @@ class TestTomography(QiskitTestCase):
 
         # define ansatz
         num_qubits = 2
-        size = 2**num_qubits
         self.ansatz = RealAmplitudes(num_qubits=num_qubits, reps=3, entanglement="full")
         self.parameters = 2 * np.pi * np.random.rand(self.ansatz.num_parameters)
 
@@ -58,6 +45,12 @@ class TestTomography(QiskitTestCase):
 
     def test_real_qst(self):
         sampler = Sampler()
-        real_qst = RealQST(self.ansatz, sampler)
-        sol = real_qst.get_relative_amplitude_signs(self.parameters)
+        htree_qst = HTreeQST(self.ansatz, sampler)
+        sol = htree_qst.get_relative_amplitude_sign(self.parameters)
+        assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
+
+    def test_real_qst(self):
+        sampler = Sampler()
+        shadow_qst = ShadowQST(self.ansatz, sampler, 1000)
+        sol = shadow_qst.get_relative_amplitude_sign(self.parameters)
         assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)

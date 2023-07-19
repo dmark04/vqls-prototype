@@ -40,11 +40,11 @@ from .hadamard_test.direct_hadamard_test import (
 )
 from .tomography.qst import FullQST
 from .tomography.simulator_qst import SimulatorQST
-from .tomography.real_qst import RealQST
+from .tomography.htree_qst import HTreeQST
 from .tomography.shadow_qst import ShadowQST
 
 
-class EVQLS(VQLS):
+class Hybrid_QST_VQLS(VQLS):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
     financial models, fluid simulation or numerical field calculation. The problem can be defined
@@ -171,7 +171,7 @@ class EVQLS(VQLS):
             "use_overlap_test": False,
             "use_local_cost_function": False,
             "matrix_decomposition": "optimized_pauli",
-            "tomography": "real_qst",
+            "tomography": "htree",
             "shots": 4000,
         }
 
@@ -414,14 +414,14 @@ class EVQLS(VQLS):
         """
         if tomography == "simulator":
             self.tomography_calculator = SimulatorQST(self._ansatz)
-        elif tomography == "real_qst":
-            self.tomography_calculator = RealQST(self._ansatz, self.sampler)
-        elif tomography == "full_qst":
+        elif tomography == "htree":
+            self.tomography_calculator = HTreeQST(self._ansatz, self.sampler)
+        elif tomography == "full":
             self.tomography_calculator = FullQST(
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
-        elif tomography == "shadow_qst":
-            self.tomography_calculator = ShadowQst(self._ansatz, self.sampler, 1000)
+        elif tomography == "shadow":
+            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, 1000)
         else:
             raise ValueError("tomography method not recognized")
 

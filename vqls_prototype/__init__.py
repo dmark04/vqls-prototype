@@ -17,7 +17,7 @@ Variational Quantum Linear Solver
 """
 
 from .vqls import VQLS, VQLSLog
-from .evqls import EVQLS
+from .hybrid_qst_vqls import Hybrid_QST_VQLS
 
 
-__all__ = ["VQLS", "VQLSLog", "EVQLS"]
+__all__ = ["VQLS", "VQLSLog", "Hybrid_QST_VQLS"]
