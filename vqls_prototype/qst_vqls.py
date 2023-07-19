@@ -33,11 +33,6 @@ from .matrix_decomposition.optimized_matrix_decomposition import (
 )
 
 from .vqls import VQLS
-
-from .hadamard_test.direct_hadamard_test import (
-    DirectHadamardTest,
-    BatchDirectHadammardTest,
-)
 from .tomography.qst import FullQST
 from .tomography.simulator_qst import SimulatorQST
 from .tomography.htree_qst import HTreeQST
@@ -280,11 +275,11 @@ class QST_VQLS(VQLS):
             output.append(
                 statevector @ self.unique_pauli_sparse_matrix[ipaulis] @ statevector
             )
-        out = np.array(out)
-        out = out[self.matrix_circuits.contraction_index_mapping] * np.array(
+        output = np.array(output)
+        output = output[self.matrix_circuits.contraction_index_mapping] * np.array(
             self.matrix_circuits.contraction_coefficient
         )
-        return out
+        return output
 
     @staticmethod
     def get_coefficient_matrix(coeffs) -> np.ndarray:
