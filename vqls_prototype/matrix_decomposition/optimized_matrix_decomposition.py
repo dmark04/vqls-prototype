@@ -92,13 +92,13 @@ class ContractedPauliDecomposition(PauliDecomposition):
                     contracted_pauli_string += pauli
                     contracted_coefficient *= coefficient
 
-                # # contraction map -> not  needed
-                # self.contraction_map.append(
-                #     [
-                #         (pauli_string_1, pauli_string_2),
-                #         (contracted_pauli_string, contracted_coefficient),
-                #     ]
-                # )
+                # contraction map -> not  needed
+                self.contraction_map.append(
+                    [
+                        (pauli_string_1, pauli_string_2),
+                        (contracted_pauli_string, contracted_coefficient),
+                    ]
+                )
 
                 # store circuits if we haven't done that yet
                 if contracted_pauli_string not in index_contracted_pauli:
@@ -107,8 +107,9 @@ class ContractedPauliDecomposition(PauliDecomposition):
                         self._create_circuit(contracted_pauli_string)
                     )
                     self.contraction_index_mapping.append(number_existing_circuits)
-                    index_contracted_pauli[contracted_pauli_string] = len(self.unique_pauli_strings)
+                    index_contracted_pauli[contracted_pauli_string] = number_existing_circuits
                     number_existing_circuits += 1
+
                 # otherwise find reference of existing circuit
                 else:
                     self.contraction_index_mapping.append(
