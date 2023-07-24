@@ -74,39 +74,46 @@ class ContractedPauliDecomposition(PauliDecomposition):
         number_existing_circuits = 0
         nstrings = len(self.strings)
 
+        index_contracted_pauli = dict()
+
         # loop over combination of gates
         for i1 in range(nstrings):
             for i2 in range(i1 + 1, nstrings):
+
                 # extract pauli strings
                 pauli_string_1, pauli_string_2 = self.strings[i1], self.strings[i2]
                 contracted_pauli_string, contracted_coefficient = "", 1.0
 
+                str_len = len(pauli_string_1)
                 # contract pauli gates qubit wise
-                for pauli1, pauli2 in zip(pauli_string_1, pauli_string_2):
+                for ip in range(str_len):
+                    pauli1, pauli2 = pauli_string_1[ip], pauli_string_2[ip]
                     pauli, coefficient = self.contraction_dict[pauli1 + pauli2]
                     contracted_pauli_string += pauli
                     contracted_coefficient *= coefficient
 
-                # contraction mpa -> not  needed
-                self.contraction_map.append(
-                    [
-                        (pauli_string_1, pauli_string_2),
-                        (contracted_pauli_string, contracted_coefficient),
-                    ]
-                )
+                # # contraction map -> not  needed
+                # self.contraction_map.append(
+                #     [
+                #         (pauli_string_1, pauli_string_2),
+                #         (contracted_pauli_string, contracted_coefficient),
+                #     ]
+                # )
 
                 # store circuits if we haven't done that yet
-                if contracted_pauli_string not in self.unique_pauli_strings:
+                if contracted_pauli_string not in index_contracted_pauli:
                     self.unique_pauli_strings.append(contracted_pauli_string)
                     self.contracted_circuits.append(
                         self._create_circuit(contracted_pauli_string)
                     )
                     self.contraction_index_mapping.append(number_existing_circuits)
+                    index_contracted_pauli[contracted_pauli_string] = len(self.unique_pauli_strings)
                     number_existing_circuits += 1
                 # otherwise find reference of existing circuit
                 else:
                     self.contraction_index_mapping.append(
-                        self.unique_pauli_strings.index(contracted_pauli_string)
+                        # self.unique_pauli_strings.index(contracted_pauli_string)
+                        index_contracted_pauli[contracted_pauli_string]
                     )
 
                 # store the contraction coefficient
