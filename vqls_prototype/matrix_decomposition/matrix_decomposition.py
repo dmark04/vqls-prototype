@@ -9,7 +9,7 @@ import numpy.typing as npt
 import scipy.linalg as spla
 
 from qiskit.circuit import QuantumCircuit
-from qiskit.quantum_info import Operator, Pauli
+from qiskit.quantum_info import Operator, Pauli, SparsePauliOp
 
 import networkx as nx
 
@@ -318,14 +318,17 @@ class PauliDecomposition(MatrixDecomposition):
         self.strings = []
         for pauli_gates in product(self.basis, repeat=self.num_qubits):
             pauli_string = "".join(pauli_gates)
-            pauli_op = Pauli(pauli_string)
-            pauli_matrix = pauli_op.to_matrix()
-            coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
+            pauli_op = SparsePauliOp(pauli_string) # Pauli(pauli_string)
+            # pauli_matrix = pauli_op.to_matrix()
+            # coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
+            # coef: complex_array_type = np.trace(np.dot(pauli_op, self.matrix))
+            coef: complex_array_type = np.einsum('ij,ji', pauli_op, self.matrix)
+
 
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
-                unit_mats.append(pauli_matrix)
+                # unit_mats.append(pauli_matrix)
                 circuits.append(self._create_circuit(pauli_string))
 
         return np.array(coeffs, dtype=np.cdouble), unit_mats, circuits
