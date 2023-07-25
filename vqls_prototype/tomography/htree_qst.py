@@ -1,10 +1,10 @@
 import qiskit
 import numpy as np
 import treelib
-
+from scipy import sparse 
 
 class HTreeQST:
-    def __init__(self, circuit, sampler):
+    def __init__(self, circuit, sampler, use_matrix_path=False):
         """Perform a QST for real valued state vector
         This needs only N additional circuits but require some posprocesing
 
@@ -26,6 +26,10 @@ class HTreeQST:
 
         # get all the paths
         self.path_to_node = self.get_path()
+        if use_matrix_path:
+            self.path_matrix = self.get_path_sparse_matrix()
+        else:
+            self.path_matrix = None
 
         # sampler and circuits
         self.sampler = sampler
@@ -92,6 +96,20 @@ class HTreeQST:
             paths.append(list(self.tree.rsearch(inode)))
         return paths
 
+    def get_path_sparse_matrix(self):
+        """transforms the path into a sparse matrix
+
+        Returns:
+            _type_: _description_
+        """ 
+        row_idx, col_idx, vals = [], [], []
+        for ip, path in enumerate(self.path_to_node):
+            num_nodes = len(path)
+            row_idx += [ip]*num_nodes
+            col_idx += path 
+            vals += [1]*num_nodes
+        return sparse.coo_matrix((vals,(row_idx,col_idx)),shape=(self.size,self.size))
+
     def get_circuits(self):
         """_summary_
 
@@ -153,10 +171,13 @@ class HTreeQST:
         Args:
             weights (np.array):
         """
-        signs = np.zeros_like(weights)
-        for ip, path in enumerate(self.path_to_node):
-            signs[ip] = weights[path].prod()
-        return signs
+        if self.path_matrix is not None:
+            signs = np.zeros_like(weights)
+            for ip, path in enumerate(self.path_to_node):
+                signs[ip] = weights[path].prod()
+            return signs
+        else:
+            return (self.path_matrix*weights).prod(axis=0)
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_
