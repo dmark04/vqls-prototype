@@ -171,6 +171,8 @@ class QST_VQLS(VQLS):
             "shots": 4000,
         }
 
+        self.num_qubits = self.ansatz.num_qubits
+
     def preprocessing_matrices(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
@@ -302,7 +304,6 @@ class QST_VQLS(VQLS):
         #         statevector @ self.unique_pauli_sparse_matrix[ipaulis] @ statevector
         #     )
         # output = np.array(output)
-
         output = statevector @ self.unique_pauli_sparse_tensor @ statevector
         output = output[self.matrix_circuits.contraction_index_mapping] * np.array(
             self.matrix_circuits.contraction_coefficient

@@ -4,7 +4,7 @@ import treelib
 from scipy import sparse 
 
 class HTreeQST:
-    def __init__(self, circuit, sampler, use_matrix_path=False):
+    def __init__(self, circuit, sampler, use_matrix_path=True):
         """Perform a QST for real valued state vector
         This needs only N additional circuits but require some posprocesing
 
@@ -28,8 +28,10 @@ class HTreeQST:
         self.path_to_node = self.get_path()
         if use_matrix_path:
             self.path_matrix = self.get_path_sparse_matrix()
+            self.idx_path_matrix = np.insert(np.cumsum(self.path_matrix.getnnz(axis=1)),0,0)
         else:
             self.path_matrix = None
+            self.idx_path_matrix = None
 
         # sampler and circuits
         self.sampler = sampler
@@ -171,13 +173,14 @@ class HTreeQST:
         Args:
             weights (np.array):
         """
-        if self.path_matrix is not None:
+        if self.path_matrix is None:
             signs = np.zeros_like(weights)
             for ip, path in enumerate(self.path_to_node):
                 signs[ip] = weights[path].prod()
             return signs
         else:
-            return (self.path_matrix*weights).prod(axis=0)
+            mat = self.path_matrix.multiply(weights)
+            return np.multiply.reduceat(mat.data, self.idx_path_matrix[:-1])
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_
