@@ -11,6 +11,7 @@ See https://arxiv.org/abs/1909.05820
 from qiskit.algorithms.optimizers import Minimizer, Optimizer
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
+import sparse
 from qiskit.opflow.gradients import GradientBase
 from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit import Aer
@@ -219,16 +220,19 @@ class QST_VQLS(VQLS):
         # precompute the pauli matrices of the unique pauli strings
         self.unique_pauli_sparse_matrix = self.get_unique_pauli_sparse_matrix()
 
+        # transform the list of pauli matrices in a sparse tensor
+        self.unique_pauli_sparse_tensor = self.get_unique_pauli_sparse_tensor()
+
     def get_vector_pauli_product(self):
         """get the sparse representation of the pauli matrices
 
         Returns:
             _type_: _description_
         """
-        return [
+        return np.array([
             SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
             for pauli in self.matrix_circuits.strings
-        ]
+        ])
 
     def get_unique_pauli_sparse_matrix(self):
         """compute the product of pauli matrices
@@ -240,6 +244,26 @@ class QST_VQLS(VQLS):
             SparsePauliOp(pauli).to_matrix(sparse=True)
             for pauli in self.matrix_circuits.unique_pauli_strings
         ]
+    
+    def get_unique_pauli_sparse_tensor(self):
+        """transforms the list of sparse pauli matrices in a sparse tensor
+        """
+        coords, data = [[],[],[]], []
+        npaulis = len(self.unique_pauli_sparse_matrix)
+        size = 2**self.num_qubits
+        for ip, pauli in enumerate(self.unique_pauli_sparse_matrix):
+            # convert to COO format
+            pauli_coo = pauli.tocoo()
+            # extract data
+            local_data = pauli_coo.data.tolist() 
+            nelem = len(local_data)
+            #extract coord
+            data += local_data
+            coords[0] += [ip] * nelem
+            coords[1] += pauli_coo.row.tolist()
+            coords[2] += pauli_coo.col.tolist() 
+            
+        return sparse.COO(coords, data, shape=(npaulis,size,size))
 
     def get_overlap_values(self, statevector):
         """_summary_
@@ -250,16 +274,18 @@ class QST_VQLS(VQLS):
         Returns:
             _type_: _description_
         """
-        output = []
-        for ipaulis in range(len(self.vector_pauli_product)):
-            output.append(
-                np.dot(
-                    statevector,
-                    self.vector_pauli_product[ipaulis],
-                )
-            )
+        # output = []
+        # for ipaulis in range(len(self.vector_pauli_product)):
+        #     output.append(
+        #         np.dot(
+        #             statevector,
+        #             self.vector_pauli_product[ipaulis],
+        #         )
+        #     )
 
-        return np.array(output).flatten()
+        # return np.array(output).flatten()
+
+        return np.dot(statevector,self.vector_pauli_product.T)
 
     def get_norm_values(self, statevector):
         """_summary_
@@ -270,12 +296,14 @@ class QST_VQLS(VQLS):
         Returns:
             _type_: _description_
         """
-        output = []
-        for ipaulis in range(len(self.unique_pauli_sparse_matrix)):
-            output.append(
-                statevector @ self.unique_pauli_sparse_matrix[ipaulis] @ statevector
-            )
-        output = np.array(output)
+        # output = []
+        # for ipaulis in range(len(self.unique_pauli_sparse_matrix)):
+        #     output.append(
+        #         statevector @ self.unique_pauli_sparse_matrix[ipaulis] @ statevector
+        #     )
+        # output = np.array(output)
+
+        output = statevector @ self.unique_pauli_sparse_tensor @ statevector
         output = output[self.matrix_circuits.contraction_index_mapping] * np.array(
             self.matrix_circuits.contraction_coefficient
         )
