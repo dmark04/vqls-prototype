@@ -20,7 +20,7 @@ from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_bounds,
     _validate_initial_point,
 )
-
+from qiskit.quantum_info import SparsePauliOp
 from qiskit.quantum_info import Operator
 
 from .variational_linear_solver import (
@@ -171,7 +171,7 @@ class Hybrid_QST_VQLS(VQLS):
             "use_overlap_test": False,
             "use_local_cost_function": False,
             "matrix_decomposition": "optimized_pauli",
-            "tomography": "htree",
+            "tomography": "shadow",
             "shots": 4000,
         }
 
@@ -347,13 +347,14 @@ class Hybrid_QST_VQLS(VQLS):
                 samples[:num_norm_circuits]
             )
 
-            # post process the values for the overlap
-            sign_ansatz = self.tomography_calculator.get_relative_amplitude_sign(
-                parameters
-            )
-            hdmr_values_overlap = self.matrix_circuits.get_overlap_values(
-                samples[num_norm_circuits:], sign_ansatz
-            )
+
+            # reconstruct the satevector from the previous measurements        
+            statevector = self.tomography_calculator.get_statevector(parameters, 
+                                                                     samples=self.reformat_samples_for_shadows(samples[:num_norm_circuits]),
+                                                                     labels=self.matrix_circuits.optimized_measurement.shared_basis_string)
+            
+            # compute the overlap values
+            hdmr_values_overlap = self.get_overlap_values(statevector)
 
             # compute the total cost
             cost = self._assemble_cost_function(
@@ -375,6 +376,27 @@ class Hybrid_QST_VQLS(VQLS):
             return cost
 
         return cost_evaluation
+
+    
+    def reformat_samples_for_shadows(self, samples):
+        """_summary_
+
+        Args:
+            samples (_type_): _description_
+        """
+        num_qubits = self.tomography_calculator.num_qubits
+        return[{np.binary_repr(i, width=num_qubits):val for i,val in enumerate(s)} for s in samples]
+
+    def get_overlap_values(self, statevector):
+        """_summary_
+
+        Args:
+            statevector (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return np.dot(statevector,self.vector_pauli_product.T)
 
     def _validate_solve_options(self, options: Union[Dict, None]) -> Dict:
         """validate the options used for the solve methods
@@ -406,7 +428,7 @@ class Hybrid_QST_VQLS(VQLS):
 
         return options
 
-    def _init_tomography(self, tomography: str):
+    def _init_tomography(self, tomography: str, num_shadows=None):
         """initialize the tomography calculator
 
         Args:
@@ -421,9 +443,20 @@ class Hybrid_QST_VQLS(VQLS):
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
         elif tomography == "shadow":
-            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, 1000)
+            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, num_shadows)
         else:
             raise ValueError("tomography method not recognized")
+
+    def get_vector_pauli_product(self):
+        """get the sparse representation of the pauli matrices
+
+        Returns:
+            _type_: _description_
+        """
+        return np.array([
+            SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
+            for pauli in self.matrix_circuits.strings
+        ])
 
     def solve(
         self,
@@ -453,6 +486,9 @@ class Hybrid_QST_VQLS(VQLS):
         norm_circuits, overlap_circuits = self.construct_circuit(
             matrix, vector, options
         )
+
+        # precompute the product of pauli matrices and rhs
+        self.vector_pauli_product = self.get_vector_pauli_product()
 
         # compute he coefficient matrix
         coefficient_matrix = self.get_coefficient_matrix(

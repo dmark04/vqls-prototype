@@ -167,7 +167,7 @@ class QST_VQLS(VQLS):
             "use_overlap_test": False,
             "use_local_cost_function": False,
             "matrix_decomposition": "contracted_pauli",
-            "tomography": "htree",
+            "tomography": "shadow",
             "shots": 4000,
         }
 
@@ -436,9 +436,9 @@ class QST_VQLS(VQLS):
                     options[k] = self.default_solve_options[k]
 
         if options["use_overlap_test"] != False:
-            raise ValueError("Overlap test not implemented for evqls")
+            raise ValueError("Overlap test not implemented for qst vqls")
         if options["use_local_cost_function"] != False:
-            raise ValueError("local cost function not implemented for evqls")
+            raise ValueError("local cost function not implemented for qst vqls")
         if options["matrix_decomposition"] != "contracted_pauli":
             raise ValueError(
                 "Matrix decomposition must be contracted pauli for QST-VQLS"
@@ -446,7 +446,7 @@ class QST_VQLS(VQLS):
 
         return options
 
-    def initialize_tomography_calculator(self, tomography: str):
+    def initialize_tomography_calculator(self, tomography: str, num_shadows=None):
         """initialize the tomography calculator
 
         Args:
@@ -461,7 +461,9 @@ class QST_VQLS(VQLS):
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
         elif tomography == "shadow":
-            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, 1000)
+            if num_shadows is None:
+                raise ValueError('Please provide a number of shadows')
+            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, num_shadows)
         else:
             raise ValueError("tomography method not recognized")
 
@@ -487,7 +489,7 @@ class QST_VQLS(VQLS):
         options = self._validate_solve_options(options)
 
         # intiialize the tomography
-        self.initialize_tomography_calculator(options["tomography"])
+        self.initialize_tomography_calculator(options["tomography"], num_shadows=options["shots"])
 
         # compute the circuits needed for the hadamard tests
         self.preprocessing_matrices(matrix, vector)

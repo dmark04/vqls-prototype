@@ -9,10 +9,10 @@ import numpy.typing as npt
 from qiskit.circuit import QuantumCircuit
 import networkx as nx
 from .matrix_decomposition import PauliDecomposition
-
+from tqdm import tqdm
 complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
-
+import itertools
 
 class ContractedPauliDecomposition(PauliDecomposition):
     """A class that represents the Pauli decomposition of a matrix with added attributes
@@ -44,6 +44,16 @@ class ContractedPauliDecomposition(PauliDecomposition):
         "ZY": ("X", -1.0j),
     }
 
+    inverse_contraction_dict = {
+
+        "I": [ ["I", "X", "Y"," Z"], ["I", "X", "Y"," Z"], [ 1, 1, -1,     1]    ],
+        "X": [ ["X", "I", "Y", "Z"], ["I", "X", "Z", "Z"], [ 1, 1, -1.0j, -1.0j] ],
+        "Y": [ ["Y", "I", "X", "Z"], ["I", "Y", "Z", "X"], [-1, 1, -1.0j,  1.0j] ],
+        "Z": [ ["Z", "I", "X", "Y"], ["I", "Z", "Y", "Z"], [ 1, 1,  1.0j,  1.0j] ]
+
+    }
+
+
     def __init__(
         self,
         matrix: Optional[npt.NDArray] = None,
@@ -53,10 +63,11 @@ class ContractedPauliDecomposition(PauliDecomposition):
         ] = None,
     ):
         super().__init__(matrix, circuits, coefficients)
-        self.contract_pauli_terms()
+        self.contract_pauli_terms(build_circuits=True)
 
     def contract_pauli_terms(
         self,
+        build_circuits = True
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         """Compute the contractions of the Pauli Strings.
 
@@ -73,20 +84,19 @@ class ContractedPauliDecomposition(PauliDecomposition):
         self.unique_pauli_strings = []
         number_existing_circuits = 0
         nstrings = len(self.strings)
-
+        str_len = range(self.num_qubits)
         index_contracted_pauli = dict()
-
+        
         # loop over combination of gates
-        for i1 in range(nstrings):
+        for i1 in tqdm(range(nstrings)):
             for i2 in range(i1 + 1, nstrings):
 
                 # extract pauli strings
                 pauli_string_1, pauli_string_2 = self.strings[i1], self.strings[i2]
                 contracted_pauli_string, contracted_coefficient = "", 1.0
-
-                str_len = len(pauli_string_1)
+                
                 # contract pauli gates qubit wise
-                for ip in range(str_len):
+                for ip in str_len:
                     pauli1, pauli2 = pauli_string_1[ip], pauli_string_2[ip]
                     pauli, coefficient = self.contraction_dict[pauli1 + pauli2]
                     contracted_pauli_string += pauli
@@ -103,9 +113,10 @@ class ContractedPauliDecomposition(PauliDecomposition):
                 # store circuits if we haven't done that yet
                 if contracted_pauli_string not in index_contracted_pauli:
                     self.unique_pauli_strings.append(contracted_pauli_string)
-                    self.contracted_circuits.append(
-                        self._create_circuit(contracted_pauli_string)
-                    )
+                    if build_circuits:
+                        self.contracted_circuits.append(
+                            self._create_circuit(contracted_pauli_string)
+                        )
                     self.contraction_index_mapping.append(number_existing_circuits)
                     index_contracted_pauli[contracted_pauli_string] = number_existing_circuits
                     number_existing_circuits += 1
@@ -119,6 +130,23 @@ class ContractedPauliDecomposition(PauliDecomposition):
 
                 # store the contraction coefficient
                 self.contraction_coefficient.append(contracted_coefficient)
+
+
+    def _find_contracted_pairs(self, pauli):
+        """_summary_
+
+        Args:
+            pauli (_type_): _description_
+        """
+        first_pauli, second_pauli, coefficients = [], [], []
+        for p in pauli:
+            p1, p2, c = self.inverse_contraction_dict[p]
+            first_pauli.append(p1)
+            second_pauli.append(p2)
+            coefficients.append(c) 
+
+        return itertools.product(*first_pauli), itertools.product(*second_pauli), itertools.product(*coefficients)
+
 
     def post_process_contracted_norm_values(self, hdmr_values_norm):
         """Post process the measurement obtained with the direct
@@ -140,6 +168,7 @@ class OptimizationMeasurementGroup(object):
     cluster: OrderedDict
     eigenvalues: List
     index_mapping: List
+    shared_basis_string: List
     shared_basis_transformation: List
 
 
@@ -163,8 +192,6 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         self.num_unique_norm_terms = len(self.unique_pauli_strings)
         self.num_unique_overlap_terms = len(self.strings)
 
-        # ad the single paulis to the list of unique pauli strings
-        # self.add_single_pauli_strings()
 
         # compute the measurement optimized mapping
         self.optimized_measurement = self.group_contracted_terms()
@@ -225,7 +252,7 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
 
     @staticmethod
     def _create_shared_basis_circuit(pauli_string):
-        """creatae the circuit needed to rotate the qubits in the shared eigenbasis"""
+        """create the circuit needed to rotate the qubits in the shared eigenbasis"""
 
         num_qubits = len(pauli_string)
         circuit = QuantumCircuit(num_qubits)
@@ -244,7 +271,7 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         # create qwc edges
         nstrings = len(self.unique_pauli_strings)
         qwc_graph_edges = []
-        for i1 in range(nstrings):
+        for i1 in tqdm(range(nstrings)):
             for i2 in range(i1 + 1, nstrings):
                 pauli_string_1, pauli_string_2 = (
                     self.unique_pauli_strings[i1],
@@ -260,6 +287,42 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
 
         return qwc_graph
 
+    @staticmethod
+    def _get_commuting_strings(pauli_string):
+        """Returns all the strings that commute with string
+
+        Args:
+            string (_type_): _description_
+        """
+        all_gates = ['I','X','Y','Z']
+        basis = []
+        for p in pauli_string:
+            if p == 'I':
+                basis.append(all_gates)
+            if p != 'I':
+                basis.append(['I',p])
+        return [''.join(s) for s in itertools.product(*basis)]
+
+
+    def _create_qwc_graph_fast(self):
+        """Creates a nx graph representing the qwc map"""
+
+        # create qwc edges
+        qwc_graph_edges = []
+        qwc_graph = nx.Graph()
+        qwc_graph.add_nodes_from(self.unique_pauli_strings)
+
+        for pauli_string in tqdm(self.unique_pauli_strings):
+            commuting_strings = self._get_commuting_strings(pauli_string)
+            for cs in commuting_strings:
+                if cs in qwc_graph.nodes:
+                    if cs != pauli_string:
+                        qwc_graph_edges.append([pauli_string, cs])
+            
+        # add edges
+        qwc_graph.add_edges_from(qwc_graph_edges)
+
+        return qwc_graph
     def _cluster_graph(self, qwc_complement_graph, strategy="largest_first"):
         """Cluster the qwc graph"""
 
@@ -269,19 +332,46 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         )
         return qwc_groups_flat
 
-    def group_contracted_terms(self):
+    def _cluster_graph_fast(self):
+
+        processed_strings = OrderedDict()
+        qwc_cluster = OrderedDict()
+        icluster = 0
+        for pauli_string in tqdm(self.unique_pauli_strings):
+            if 'I' in pauli_string:
+                continue
+            if pauli_string in processed_strings:
+                continue 
+            commuting_strings = self._get_commuting_strings(pauli_string)
+            commuting_strings = [cs for cs in commuting_strings if (cs not in processed_strings) and (cs in self.unique_pauli_strings)]
+            qwc_cluster[icluster] = commuting_strings
+            for cs in commuting_strings:
+                processed_strings[cs] = icluster
+            icluster += 1
+        if len(processed_strings.keys()) != len(self.unique_pauli_strings):
+            print('Fast Clustering failed, default to full method')
+            return None
+        return processed_strings
+
+    def group_contracted_terms(self, return_group=False):
         """Finds the qubit wise commutating operator to further optimize the number of measurements."""
 
-        # compute the complement of the qwc graph
-        qwc_complement_graph = nx.complement(self._create_qwc_graph())
+        qwc_cluster = self._cluster_graph_fast()
 
-        # determine the cluster
-        qwc_cluster = self._cluster_graph(qwc_complement_graph)
+        if qwc_cluster is None:
+            # compute the complement of the qwc graph
+            qwc_complement_graph = nx.complement(self._create_qwc_graph_fast())
+
+            # determine the cluster
+            qwc_cluster = self._cluster_graph(qwc_complement_graph)
+        
+        if return_group:
+            return np.unique([v for _,v in qwc_cluster.items()])
 
         # organize the groups
         nstrings = len(self.unique_pauli_strings)
         optimized_measurement = OptimizationMeasurementGroup(
-            OrderedDict(), [None] * nstrings, [None] * nstrings, []
+            OrderedDict(), [None] * nstrings, [None] * nstrings, [], []
         )
 
         # loop over the qwc cluster from nx
@@ -303,13 +393,15 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
 
         # determine the shared eigenbasis
         optimized_measurement.shared_basis_transformation = []
+        optimized_measurement.shared_basis_string = []
         for group_id, pauli_strings in optimized_measurement.cluster.items():
             shared_basis = self._determine_shared_basis_string(pauli_strings)
 
+            optimized_measurement.shared_basis_string.append(list(shared_basis[::-1]))
             optimized_measurement.shared_basis_transformation.append(
                 self._create_shared_basis_circuit(shared_basis[::-1])
             )
-
+        optimized_measurement.shared_basis_string = np.array(optimized_measurement.shared_basis_string)
         return optimized_measurement
 
     def get_norm_values(self, samples):
