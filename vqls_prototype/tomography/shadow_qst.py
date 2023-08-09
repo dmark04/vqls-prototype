@@ -166,7 +166,7 @@ class ShadowQST:
                 proba[k] = v
             samples.append(proba)
         return np.sqrt(samples[0])
-
+    
 
     def get_statevector(self, parameters, samples=None, labels=None):
         """_summary_

@@ -8,6 +8,7 @@ from qiskit_experiments.library import StateTomography
 class SimulatorQST:
     def __init__(self, circuit):
         self.circuit = circuit
+        self.num_qubits = circuit.num_qubits
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_
@@ -20,7 +21,7 @@ class SimulatorQST:
         state_vector = (Statevector(self.circuit.bind_parameters(parameters))).data.real
         return np.sign(state_vector)
 
-    def get_statevector(self, parameters):
+    def get_statevector(self, parameters, **kwargs):
         """_summary_
 
         Args:

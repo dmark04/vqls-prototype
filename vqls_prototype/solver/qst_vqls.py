@@ -11,16 +11,17 @@ See https://arxiv.org/abs/1909.05820
 from qiskit.algorithms.optimizers import Minimizer, Optimizer
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
+import sparse
 from qiskit.opflow.gradients import GradientBase
 from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit import Aer
 from qiskit import QuantumCircuit
-
+from qiskit.quantum_info import SparsePauliOp
 from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_bounds,
     _validate_initial_point,
 )
-from qiskit.quantum_info import SparsePauliOp
+
 from qiskit.quantum_info import Operator
 
 from .variational_linear_solver import (
@@ -28,23 +29,18 @@ from .variational_linear_solver import (
 )
 
 
-from .matrix_decomposition.optimized_matrix_decomposition import (
-    OptimizedPauliDecomposition,
+from ..matrix_decomposition.optimized_matrix_decomposition import (
+    ContractedPauliDecomposition,
 )
 
-from .vqls import VQLS
+from ..tomography.qst import FullQST
+from ..tomography.simulator_qst import SimulatorQST
+from ..tomography.htree_qst import HTreeQST
+from ..tomography.shadow_qst import ShadowQST
 
-from .hadamard_test.direct_hadamard_test import (
-    DirectHadamardTest,
-    BatchDirectHadammardTest,
-)
-from .tomography.qst import FullQST
-from .tomography.simulator_qst import SimulatorQST
-from .tomography.htree_qst import HTreeQST
-from .tomography.shadow_qst import ShadowQST
+from .base_solver import BaseSolver
 
-
-class Hybrid_QST_VQLS(VQLS):
+class QST_VQLS(BaseSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
     financial models, fluid simulation or numerical field calculation. The problem can be defined
@@ -129,6 +125,7 @@ class Hybrid_QST_VQLS(VQLS):
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
         callback: Optional[Callable[[int, np.ndarray, float, float], None]] = None,
+        options: Optional[Union[Dict, None]] = None 
     ) -> None:
         r"""
         Args:
@@ -154,41 +151,34 @@ class Hybrid_QST_VQLS(VQLS):
                 Three parameter values are passed to the callback as follows during each evaluation
                 by the optimizer for its current set of parameters as it works towards the minimum.
                 These are: the evaluation count, the cost and the parameters for the ansatz
+            options: a dictionary of options for the solver
         """
-        super().__init__(
-            estimator,
-            ansatz,
-            optimizer,
-            sampler,
-            initial_point,
-            gradient,
-            max_evals_grouped,
-            callback,
-        )
+        super().__init__(estimator, ansatz, optimizer, sampler,
+                         initial_point, gradient, max_evals_grouped,
+                         callback)
 
         self.tomography_calculator = None
         self.default_solve_options = {
             "use_overlap_test": False,
             "use_local_cost_function": False,
-            "matrix_decomposition": "optimized_pauli",
+            "matrix_decomposition": "contracted_pauli",
             "tomography": "shadow",
             "shots": 4000,
+            "reuse_matrix": False
         }
+        self.options = self._validate_solve_options(options)
+        self.num_qubits = self.ansatz.num_qubits
 
-    def construct_circuit(
+    def preprocessing_matrices(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
         vector: Union[np.ndarray, QuantumCircuit],
-        options: Dict,
-    ) -> Tuple[List[QuantumCircuit], List[QuantumCircuit]]:
+    ) -> None:
         """Returns the a list of circuits required to compute the expectation value
 
         Args:
             matrix (Union[np.ndarray, QuantumCircuit, List]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of thge linear system
-            options (Dict): Options to compute define the quantum circuits
-                that compute the cost function
-
         Raises:
             ValueError: if vector and matrix have different size
             ValueError: if vector and matrix have different number of qubits
@@ -206,63 +196,99 @@ class Hybrid_QST_VQLS(VQLS):
             self.vector_norm = np.linalg.norm(vector)
             self.vector_amplitude = vector / self.vector_norm
 
-        # general numpy matrix
-        if isinstance(matrix, np.ndarray):
-            self.matrix_circuits = OptimizedPauliDecomposition(matrix, vector)
-
-        # a single circuit
-        elif issubclass(matrix, OptimizedPauliDecomposition):
-            self.matrix_circuits = matrix
-
+        if (self.options['reuse_matrix'] is True) and (self.matrix_circuits is not None):
+            print("Reusing matrices")
         else:
-            raise ValueError(
-                "matrix should be a np.array or a OptimizedPauliDecomposition"
-            )
+            # general numpy matrix
+            if isinstance(matrix, np.ndarray):
+                self.matrix_circuits = ContractedPauliDecomposition(matrix, vector)
 
-        return self._get_norm_circuits(options), self._get_overlap_circuits(options)
+            # a single circuit
+            elif issubclass(matrix, ContractedPauliDecomposition):
+                self.matrix_circuits = matrix
 
-    def _get_norm_circuits(self, options) -> List[QuantumCircuit]:
-        """construct the circuit for the norm
+            else:
+                raise ValueError(
+                    "matrix should be a np.array or a ContractedPauliDecomposition"
+                )
+
+        # precompute the product of pauli matrices and rhs
+        self.vector_pauli_product = self.get_vector_pauli_product()
+
+        # precompute the pauli matrices of the unique pauli strings
+        self.unique_pauli_sparse_matrix = self.get_unique_pauli_sparse_matrix()
+
+        # transform the list of pauli matrices in a sparse tensor
+        self.unique_pauli_sparse_tensor = self.get_unique_pauli_sparse_tensor()
+
+    def get_vector_pauli_product(self):
+        """get the sparse representation of the pauli matrices
 
         Returns:
-            List[QuantumCircuit]: quantum circuits needed for the norm
+            _type_: _description_
         """
+        return np.array([
+            SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
+            for pauli in self.matrix_circuits.strings
+        ])
 
-        circuits = []
-        for (
-            circ
-        ) in self.matrix_circuits.optimized_measurement.shared_basis_transformation:
-            circuits.append(
-                DirectHadamardTest(
-                    operators=circ,
-                    apply_initial_state=self._ansatz,
-                    shots=options["shots"],
-                )
-            )
-        return circuits
+    def get_unique_pauli_sparse_matrix(self):
+        """compute the product of pauli matrices
 
-    def _get_overlap_circuits(self, options) -> List[QuantumCircuit]:
+        Returns:
+            _type_: _description_
+        """
+        return [
+            SparsePauliOp(pauli).to_matrix(sparse=True)
+            for pauli in self.matrix_circuits.unique_pauli_strings
+        ]
+    
+    def get_unique_pauli_sparse_tensor(self):
+        """transforms the list of sparse pauli matrices in a sparse tensor
+        """
+        coords, data = [[],[],[]], []
+        npaulis = len(self.unique_pauli_sparse_matrix)
+        size = 2**self.num_qubits
+        for ip, pauli in enumerate(self.unique_pauli_sparse_matrix):
+            # convert to COO format
+            pauli_coo = pauli.tocoo()
+            # extract data
+            local_data = pauli_coo.data.tolist() 
+            nelem = len(local_data)
+            #extract coord
+            data += local_data
+            coords[0] += [ip] * nelem
+            coords[1] += pauli_coo.row.tolist()
+            coords[2] += pauli_coo.col.tolist() 
+            
+        return sparse.COO(coords, data, shape=(npaulis,size,size))
+
+    def get_overlap_values(self, statevector):
         """_summary_
 
         Args:
-            options (_type_): _description_
-
-        Raises:
-            RuntimeError: _description_
-            ValueError: _description_
+            statevector (_type_): _description_
 
         Returns:
-            List[QuantumCircuit]: _description_
+            _type_: _description_
         """
-        circuits = []
-        circuits.append(
-            DirectHadamardTest(
-                operators=self._ansatz,
-                shots=options["shots"],
-            )
-        )
 
-        return circuits
+        return np.dot(statevector,self.vector_pauli_product.T)
+
+    def get_norm_values(self, statevector):
+        """_summary_
+
+        Args:
+            statevector (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        output = statevector @ self.unique_pauli_sparse_tensor @ statevector
+        output = output[self.matrix_circuits.contraction_index_mapping] * np.array(
+            self.matrix_circuits.contraction_coefficient
+        )
+        return output
 
     @staticmethod
     def get_coefficient_matrix(coeffs) -> np.ndarray:
@@ -278,7 +304,6 @@ class Hybrid_QST_VQLS(VQLS):
         hdmr_values_norm: np.ndarray,
         hdmr_values_overlap: np.ndarray,
         coefficient_matrix: np.ndarray,
-        options: Dict,
     ) -> float:
         """Computes the value of the cost function
 
@@ -286,7 +311,6 @@ class Hybrid_QST_VQLS(VQLS):
             hdmr_values_norm (np.ndarray): values of the hadamard test for the norm
             hdmr_values_overlap (np.ndarray): values of the hadamard tests for the overlap
             coefficient_matrix (np.ndarray): exapnsion coefficients of the matrix
-            options (Dict): options to compute cost function
 
         Returns:
             float: value of the cost function
@@ -297,8 +321,7 @@ class Hybrid_QST_VQLS(VQLS):
 
         # compute the overlap terms <b|AV|0>
         sum_terms = self._compute_global_terms(
-            coefficient_matrix, hdmr_values_overlap, options
-        )
+            coefficient_matrix, hdmr_values_overlap)
 
         # overall cost
         cost = 1.0 - np.real(sum_terms / norm)
@@ -307,16 +330,11 @@ class Hybrid_QST_VQLS(VQLS):
 
     def get_cost_evaluation_function(
         self,
-        norm_circuits: List,
-        overlap_circuits: List,
         coefficient_matrix: np.ndarray,
-        options: Dict,
     ) -> Callable[[np.ndarray], Union[float, List[float]]]:
         """Generate the cost function of the minimazation process
 
         Args:
-            hdmr_tests_norm (List): list of quantum circuits needed to compute the norm
-            hdmr_tests_overlap (List): list of quantum circuits needed to compute the norm
             coefficient_matrix (np.ndarray): the matrix values of the c_n^* c_m coefficients
             options (Dict): Option to compute the cost function
 
@@ -334,31 +352,26 @@ class Hybrid_QST_VQLS(VQLS):
             )
 
         def cost_evaluation(parameters):
-            num_norm_circuits = len(norm_circuits)
-            circuits = norm_circuits + overlap_circuits
+            """returns the function that evaluates the cost
 
-            # sample the unique circuits
-            samples = BatchDirectHadammardTest(circuits).get_values(
-                self.sampler, parameters
-            )
+            Args:
+                parameters (np.array): variational parameters
 
-            # postprocess the values for the norm
-            hdmr_values_norm = self.matrix_circuits.get_norm_values(
-                samples[:num_norm_circuits]
-            )
+            Returns:
+                callable: cost function
+            """
+            # execute tomograhy
+            statevector = self.tomography_calculator.get_statevector(parameters)
 
+            # compute the norm values
+            norm_values = self.get_norm_values(statevector)
 
-            # reconstruct the satevector from the previous measurements        
-            statevector = self.tomography_calculator.get_statevector(parameters, 
-                                                                     samples=self.reformat_samples_for_shadows(samples[:num_norm_circuits]),
-                                                                     labels=self.matrix_circuits.optimized_measurement.shared_basis_string)
-            
             # compute the overlap values
-            hdmr_values_overlap = self.get_overlap_values(statevector)
+            overlap_values = self.get_overlap_values(statevector)
 
             # compute the total cost
             cost = self._assemble_cost_function(
-                hdmr_values_norm, hdmr_values_overlap, coefficient_matrix, options
+                norm_values, overlap_values, coefficient_matrix
             )
 
             # get the intermediate results if required
@@ -376,27 +389,6 @@ class Hybrid_QST_VQLS(VQLS):
             return cost
 
         return cost_evaluation
-
-    
-    def reformat_samples_for_shadows(self, samples):
-        """_summary_
-
-        Args:
-            samples (_type_): _description_
-        """
-        num_qubits = self.tomography_calculator.num_qubits
-        return[{np.binary_repr(i, width=num_qubits):val for i,val in enumerate(s)} for s in samples]
-
-    def get_overlap_values(self, statevector):
-        """_summary_
-
-        Args:
-            statevector (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        return np.dot(statevector,self.vector_pauli_product.T)
 
     def _validate_solve_options(self, options: Union[Dict, None]) -> Dict:
         """validate the options used for the solve methods
@@ -420,20 +412,24 @@ class Hybrid_QST_VQLS(VQLS):
                     options[k] = self.default_solve_options[k]
 
         if options["use_overlap_test"] != False:
-            raise ValueError("Overlap test not implemented for evqls")
+            raise ValueError("Overlap test not implemented for qst vqls")
         if options["use_local_cost_function"] != False:
-            raise ValueError("local cost function not implemented for evqls")
-        if options["matrix_decomposition"] != "optimized_pauli":
-            raise ValueError("Matrix decomposition must be optimied pauli for evqls")
+            raise ValueError("local cost function not implemented for qst vqls")
+        if options["matrix_decomposition"] != "contracted_pauli":
+            raise ValueError(
+                "Matrix decomposition must be contracted pauli for QST-VQLS"
+            )
 
         return options
 
-    def _init_tomography(self, tomography: str, num_shadows=None):
+    def initialize_tomography_calculator(self):
         """initialize the tomography calculator
 
         Args:
             tomography (str): the name of the tomography
         """
+        tomography = self.options["tomography"]
+        num_shadows = self.options["shots"]
         if tomography == "simulator":
             self.tomography_calculator = SimulatorQST(self._ansatz)
         elif tomography == "htree":
@@ -443,26 +439,17 @@ class Hybrid_QST_VQLS(VQLS):
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
         elif tomography == "shadow":
+            if num_shadows is None:
+                raise ValueError('Please provide a number of shadows')
             self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, num_shadows)
         else:
             raise ValueError("tomography method not recognized")
-
-    def get_vector_pauli_product(self):
-        """get the sparse representation of the pauli matrices
-
-        Returns:
-            _type_: _description_
-        """
-        return np.array([
-            SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
-            for pauli in self.matrix_circuits.strings
-        ])
 
     def solve(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
         vector: Union[np.ndarray, QuantumCircuit],
-        options: Union[Dict, None] = None,
+        options: Optional[Union[Dict, None]] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the linear system
 
@@ -477,18 +464,14 @@ class Hybrid_QST_VQLS(VQLS):
         """
 
         # validate the options
-        options = self._validate_solve_options(options)
+        if options is  not None:
+            self.options = self._validate_solve_options(options)
 
         # intiialize the tomography
-        self._init_tomography(options["tomography"])
+        self.initialize_tomography_calculator()
 
         # compute the circuits needed for the hadamard tests
-        norm_circuits, overlap_circuits = self.construct_circuit(
-            matrix, vector, options
-        )
-
-        # precompute the product of pauli matrices and rhs
-        self.vector_pauli_product = self.get_vector_pauli_product()
+        self.preprocessing_matrices(matrix, vector)
 
         # compute he coefficient matrix
         coefficient_matrix = self.get_coefficient_matrix(
@@ -505,9 +488,7 @@ class Hybrid_QST_VQLS(VQLS):
         self._eval_count = 0
 
         # get the cost evaluation function
-        cost_evaluation = self.get_cost_evaluation_function(
-            norm_circuits, overlap_circuits, coefficient_matrix, options
-        )
+        cost_evaluation = self.get_cost_evaluation_function(coefficient_matrix)
 
         if callable(self.optimizer):
             opt_result = self.optimizer(  # pylint: disable=not-callable
@@ -529,5 +510,8 @@ class Hybrid_QST_VQLS(VQLS):
 
         # final ansatz
         solution.state = self.ansatz.assign_parameters(solution.optimal_parameters)
+
+        # solution vector
+        solution.vector = self.tomography_calculator.get_statevector(solution.optimal_point)
 
         return solution

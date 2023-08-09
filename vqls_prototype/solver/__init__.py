@@ -16,10 +16,9 @@ Variational Quantum Linear Solver
 =======================================
 """
 
-from .solver.vqls import VQLS
-from .solver.log import VQLSLog
-from .solver.hybrid_qst_vqls import Hybrid_QST_VQLS
-from .solver.qst_vqls import QST_VQLS
+from .vqls import VQLS
+from .hybrid_qst_vqls import Hybrid_QST_VQLS
+from .qst_vqls import QST_VQLS
 
 
 __all__ = ["VQLS", "VQLSLog", "Hybrid_QST_VQLS", "QST_VQLS"]
