@@ -144,7 +144,6 @@ class VQLS(BaseSolver):
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
-        callback: Optional[Callable[[int, np.ndarray, float, float], None]] = None,
         options: Optional[Union[Dict, None]] = None
     ) -> None:
         r"""
@@ -173,8 +172,7 @@ class VQLS(BaseSolver):
                 These are: the evaluation count, the cost and the parameters for the ansatz
         """
         super().__init__(estimator, ansatz, optimizer, sampler,
-                         initial_point, gradient, max_evals_grouped,
-                         callback)
+                         initial_point, gradient, max_evals_grouped)
 
         self.default_solve_options = {
             "use_overlap_test": False,
@@ -622,54 +620,22 @@ class VQLS(BaseSolver):
 
         return options
 
-
-    # def solve(
-    #     self,
-    #     matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
-    #     vector: Union[np.ndarray, QuantumCircuit],
-    #     # options: Optional[Union[Dict, None]] = None,
-    # ) -> VariationalLinearSolverResult:
-    #     """_summary_
-
-    #     Args:
-    #         matrix (Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]]): _description_
-    #         vector (Union[np.ndarray, QuantumCircuit]): _description_
-
-    #     Returns:
-    #         VariationalLinearSolverResult: _description_
-    #     """
-    #     if not isinstance(self.optimizer, List):
-    #         optimizers = [self.optimizer]
-    #     else:
-    #         optimizers = self.optimizer
-
-    #     for opt in optimizers:
-    #         self.optimizer = opt
-    #         solution = self._solve(matrix, vector)
-    #         self.initial_point = solution.optimal_point
-    #     return solution
-
-    def solve(
+    def _solve(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
         vector: Union[np.ndarray, QuantumCircuit],
-        # options: Optional[Union[Dict, None]] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the linear system
 
         Args:
             matrix (Union[List, np.ndarray, QuantumCircuit]): matrix of the linear system
             vector (Union[np.ndarray, QuantumCircuit]): rhs of the linear system
-            options (Union[Dict, None]): options for the calculation of the cost function
 
         Returns:
             VariationalLinearSolverResult: Result of the optimization
                 and solution vector of the linear system
         """
 
-        # # validate the options
-        # if options is not None:
-        #     self.options = self._validate_solve_options(options)
         
         # compute the circuits needed for the hadamard tests
         hdmr_tests_norm, hdmr_tests_overlap = self.construct_circuit(

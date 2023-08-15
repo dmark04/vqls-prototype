@@ -127,7 +127,6 @@ class Hybrid_QST_VQLS(BaseSolver):
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
-        callback: Optional[Callable[[int, np.ndarray, float, float], None]] = None,
         options: Optional[Union[Dict, None]]  = None
     ) -> None:
         r"""
@@ -150,14 +149,9 @@ class Hybrid_QST_VQLS(BaseSolver):
                 multiple points to compute the gradient can be passed and if computed in parallel
                 improve overall execution time. Deprecated if a gradient operator or function is
                 given.
-            callback: a callback that can access the intermediate data during the optimization.
-                Three parameter values are passed to the callback as follows during each evaluation
-                by the optimizer for its current set of parameters as it works towards the minimum.
-                These are: the evaluation count, the cost and the parameters for the ansatz
         """
         super().__init__(estimator, ansatz, optimizer, sampler,
-                         initial_point, gradient, max_evals_grouped,
-                         callback)
+                         initial_point, gradient, max_evals_grouped)
 
         self.tomography_calculator = None
         self.default_solve_options = {
@@ -443,11 +437,10 @@ class Hybrid_QST_VQLS(BaseSolver):
             for pauli in self.matrix_circuits.strings
         ])
 
-    def solve(
+    def _solve(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
         vector: Union[np.ndarray, QuantumCircuit],
-        options: Optional[Union[Dict, None]] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the linear system
 
@@ -460,10 +453,6 @@ class Hybrid_QST_VQLS(BaseSolver):
             VariationalLinearSolverResult: Result of the optimization
                 and solution vector of the linear system
         """
-
-        # validate the options
-        if options is not None:
-            options = self._validate_solve_options(options)
 
         # intiialize the tomography
         self._init_tomography(self.options["tomography"])

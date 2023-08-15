@@ -15,6 +15,7 @@ from .variational_linear_solver import (
     VariationalLinearSolverResult,
 )
 
+from .log import VQLSLog
 
 class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
@@ -41,7 +42,6 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         initial_point: Union[np.ndarray, None],
         gradient: Union[GradientBase, Callable, None],
         max_evals_grouped: int,
-        callback: Callable[[int, np.ndarray, float, float], None],
     ) -> None:
         r"""
         Args:
@@ -63,10 +63,6 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
                 multiple points to compute the gradient can be passed and if computed in parallel
                 improve overall execution time. Deprecated if a gradient operator or function is
                 given.
-            callback: a callback that can access the intermediate data during the optimization.
-                Three parameter values are passed to the callback as follows during each evaluation
-                by the optimizer for its current set of parameters as it works towards the minimum.
-                These are: the evaluation count, the cost and the parameters for the ansatz
         """
         super().__init__()
 
@@ -84,7 +80,8 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         self._gradient = None
         self.gradient = gradient
 
-        self.callback = callback
+        self.logger = VQLSLog([],[])
+        self.callback = self.logger.update
 
         self._eval_count = 0
 
@@ -367,3 +364,28 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         out /= 2
 
         return out
+
+    def solve(
+        self,
+        matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
+        vector: Union[np.ndarray, QuantumCircuit],
+    ) -> VariationalLinearSolverResult:
+        """_summary_
+
+        Args:
+            matrix (Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]]): _description_
+            vector (Union[np.ndarray, QuantumCircuit]): _description_
+
+        Returns:
+            VariationalLinearSolverResult: _description_
+        """
+        if not isinstance(self.optimizer, List):
+            optimizers = [self.optimizer]
+        else:
+            optimizers = self.optimizer
+
+        for opt in optimizers:
+            self.optimizer = opt
+            solution = self._solve(matrix, vector)
+            self.initial_point = solution.optimal_point
+        return solution
