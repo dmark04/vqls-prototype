@@ -1,6 +1,7 @@
 # Base solver class
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
+from copy import deepcopy 
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -379,13 +380,19 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         Returns:
             VariationalLinearSolverResult: _description_
         """
-        if not isinstance(self.optimizer, List):
-            optimizers = [self.optimizer]
-        else:
-            optimizers = self.optimizer
+        
+        # make a copy of the optimizers
+        optimizers_list = deepcopy(self.optimizer)
 
-        for opt in optimizers:
+        if not isinstance(optimizers_list, List):
+            optimizers_list = [optimizers_list]
+
+        for opt in optimizers_list:
             self.optimizer = opt
             solution = self._solve(matrix, vector)
             self.initial_point = solution.optimal_point
+
+        # reset the optimizer to its original value
+        self.optimizer = optimizers_list
+
         return solution
