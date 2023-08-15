@@ -10,4 +10,3 @@ class VQLSLog:
     def update(self, count, cost, parameters):
         self.values.append(cost)
         self.parameters.append(parameters)
-        print(f"VQLS Iteration {count} Cost {cost: .3e}", end="\r", flush=True)
