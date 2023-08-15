@@ -180,6 +180,7 @@ class VQLS(BaseSolver):
             "matrix_decomposition": "symmetric",
             "shots": None,
             "reuse_matrix": False,
+            "verbose": False
         }
         self.options = self._validate_solve_options(options)
 
@@ -566,11 +567,12 @@ class VQLS(BaseSolver):
                 self._callback(self._eval_count, cost, parameters)
             else:
                 self._eval_count += 1
-                print(
-                    f"VQLS Iteration {self._eval_count} Cost {cost:.3e}",
-                    end="\r",
-                    flush=True,
-                )
+                if self.options["verbose"]:
+                    print(
+                        f"VQLS Iteration {self._eval_count} Cost {cost:.3e}",
+                        end="\r",
+                        flush=True,
+                    )
 
             return cost
 

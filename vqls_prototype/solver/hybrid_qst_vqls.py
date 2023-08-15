@@ -160,7 +160,8 @@ class Hybrid_QST_VQLS(BaseSolver):
             "matrix_decomposition": "optimized_pauli",
             "tomography": "shadow",
             "shots": 4000,
-            "reuse_matrix": False
+            "reuse_matrix": False,
+            "verbose":False
         }
         self.options = self._validate_solve_options(options)
 
@@ -192,7 +193,7 @@ class Hybrid_QST_VQLS(BaseSolver):
             self.vector_amplitude = vector / self.vector_norm
 
         if (self.options['reuse_matrix'] is True ) and (self.matrix_circuits is not None):
-            print("Reusing matrices")
+            print("Warning Solver is reusing matrices")
 
         else:
             # general numpy matrix
@@ -346,11 +347,12 @@ class Hybrid_QST_VQLS(BaseSolver):
                 self._callback(self._eval_count, cost, parameters)
             else:
                 self._eval_count += 1
-                print(
-                    f"VQLS Iteration {self._eval_count} Cost {cost}",
-                    end="\r",
-                    flush=True,
-                )
+                if self.options["verobse"]:
+                    print(
+                        f"VQLS Iteration {self._eval_count} Cost {cost}",
+                        end="\r",
+                        flush=True,
+                    )
 
             return cost
 

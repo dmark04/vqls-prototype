@@ -158,7 +158,8 @@ class QST_VQLS(BaseSolver):
             "matrix_decomposition": "contracted_pauli",
             "tomography": "shadow",
             "shots": 4000,
-            "reuse_matrix": False
+            "reuse_matrix": False,
+            "verbose":False
         }
         self.options = self._validate_solve_options(options)
         self.num_qubits = self.ansatz.num_qubits
@@ -374,11 +375,12 @@ class QST_VQLS(BaseSolver):
                 self._callback(self._eval_count, cost, parameters)
             else:
                 self._eval_count += 1
-                print(
-                    f"VQLS Iteration {self._eval_count} Cost {cost}",
-                    end="\r",
-                    flush=True,
-                )
+                if self.options["verbose"]:
+                    print(
+                        f"VQLS Iteration {self._eval_count} Cost {cost}",
+                        end="\r",
+                        flush=True,
+                    )
 
             return cost
 
