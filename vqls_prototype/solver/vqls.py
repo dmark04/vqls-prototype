@@ -57,9 +57,6 @@ from ..hadamard_test.direct_hadamard_test import (
 
 from .base_solver  import BaseSolver
 
-
-
-
 class VQLS(BaseSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
@@ -228,7 +225,7 @@ class VQLS(BaseSolver):
         
         # general numpy matrix
         if (self.options['reuse_matrix'] is True) and (self.matrix_circuits is not None):
-            print('Reusing matrix decomposition')
+            print('\t VQLS : Reusing matrix decomposition for new RHS')
 
         else:
             if isinstance(matrix, np.ndarray):
@@ -567,12 +564,12 @@ class VQLS(BaseSolver):
                 self._callback(self._eval_count, cost, parameters)
             else:
                 self._eval_count += 1
-                if self.options["verbose"]:
-                    print(
-                        f"VQLS Iteration {self._eval_count} Cost {cost:.3e}",
-                        end="\r",
-                        flush=True,
-                    )
+            if self.options["verbose"]:
+                print(
+                    f"VQLS Iteration {self._eval_count} Cost {cost:.3e}",
+                    end="\r",
+                    flush=True,
+                )
 
             return cost
 

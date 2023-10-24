@@ -347,12 +347,12 @@ class Hybrid_QST_VQLS(BaseSolver):
                 self._callback(self._eval_count, cost, parameters)
             else:
                 self._eval_count += 1
-                if self.options["verobse"]:
-                    print(
-                        f"VQLS Iteration {self._eval_count} Cost {cost}",
-                        end="\r",
-                        flush=True,
-                    )
+            if self.options["verbose"]:
+                print(
+                    f"Hybrid QST VQLS Iteration {self._eval_count} Cost {cost:.3e}",
+                    end="\r",
+                    flush=True,
+                )
 
             return cost
 

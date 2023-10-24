@@ -17,6 +17,7 @@ from .variational_linear_solver import (
 )
 
 from .log import VQLSLog
+import logging 
 
 class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
@@ -89,6 +90,10 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         self.vector_circuit = QuantumCircuit(0)
         self.matrix_circuits = None #QuantumCircuit(0)
 
+        
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        logger.info('Estimator : %s' %self.estimator.__class__.__module__)
 
     @property
     def num_qubits(self) -> int:
