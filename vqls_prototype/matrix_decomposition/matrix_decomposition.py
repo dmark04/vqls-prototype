@@ -7,10 +7,11 @@ import numpy as np
 from numpy.testing import assert_
 import numpy.typing as npt
 import scipy.linalg as spla
+import scipy.sparse as spsp 
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Operator, Pauli, SparsePauliOp
-
+from tqdm import tqdm
 import networkx as nx
 
 complex_type = TypeVar("complex_type", float, complex)
@@ -59,6 +60,7 @@ class MatrixDecomposition:
         """
 
         if matrix is not None:  # ignore circuits & coefficients
+            self.sparse_matrix = spsp.issparse(matrix)
             self._matrix, self.num_qubits = self._validate_matrix(matrix)
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
 
@@ -316,13 +318,16 @@ class PauliDecomposition(MatrixDecomposition):
         prefactor = 1.0 / (2**self.num_qubits)
         unit_mats, coeffs, circuits = [], [], []
         self.strings = []
-        for pauli_gates in product(self.basis, repeat=self.num_qubits):
+        for pauli_gates in tqdm(product(self.basis, repeat=self.num_qubits)):
             pauli_string = "".join(pauli_gates)
             pauli_op = SparsePauliOp(pauli_string) # Pauli(pauli_string)
             # pauli_matrix = pauli_op.to_matrix()
             # coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
             # coef: complex_array_type = np.trace(np.dot(pauli_op, self.matrix))
-            coef: complex_array_type = np.einsum('ij,ji', pauli_op, self.matrix)
+            if self.sparse_matrix:
+                coef: complex_array_type = (pauli_op.to_matrix(sparse=True) @ self.matrix).trace()
+            else:
+                coef: complex_array_type = np.einsum('ij,ji', pauli_op, self.matrix)
 
 
             if coef * np.conj(coef) != 0:
