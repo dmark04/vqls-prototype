@@ -8,26 +8,20 @@
 See https://arxiv.org/abs/1909.05820
 """
 
-
-from dataclasses import dataclass
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
-from qiskit.algorithms.variational_algorithm import VariationalAlgorithm
-from qiskit.utils.validation import validate_min
 from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_bounds,
     _validate_initial_point,
 )
-from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 from qiskit.quantum_info import Statevector
 from qiskit.algorithms.optimizers import Minimizer, Optimizer
 from qiskit.opflow.gradients import GradientBase
 
 from .variational_linear_solver import (
-    VariationalLinearSolver,
     VariationalLinearSolverResult,
 )
 from ..matrix_decomposition.matrix_decomposition import (
@@ -189,7 +183,7 @@ class VQLS(BaseSolver):
         }
         self.options = self._validate_solve_options(options)
 
-    def construct_circuit(
+    def construct_circuit(  # pylint: disable=too-many-branches
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
         vector: Union[np.ndarray, QuantumCircuit],
@@ -302,7 +296,7 @@ class VQLS(BaseSolver):
         hdmr_tests_norm = []
 
         # use measurement optimized Pauli decomposition
-        if type(self.matrix_circuits) == OptimizedPauliDecomposition:
+        if isinstance(self.matrix_circuits, OptimizedPauliDecomposition):
             for circ in self.matrix_circuits.qwc_groups_shared_basis_transformation:
                 hdmr_tests_norm.append(
                     DirectHadamardTest(
@@ -313,7 +307,7 @@ class VQLS(BaseSolver):
                 )
 
         # use contracted Pauli Decomposition
-        elif type(self.matrix_circuits) == ContractedPauliDecomposition:
+        elif isinstance(self.matrix_circuits, ContractedPauliDecomposition):
             for circ in self.matrix_circuits.contracted_circuits:
                 hdmr_tests_norm.append(
                     HadammardTest(
@@ -525,7 +519,7 @@ class VQLS(BaseSolver):
             ]:
                 # switch to sampler primitve if we do measurement optimization
                 BatchTest = BatchHadammardTest
-                if type(self.matrix_circuits) == OptimizedPauliDecomposition:
+                if isinstance(self.matrix_circuits, OptimizedPauliDecomposition):
                     primitive = self.sampler
                     BatchTest = BatchDirectHadammardTest
 
@@ -621,7 +615,7 @@ class VQLS(BaseSolver):
         ]
         if options["matrix_decomposition"] not in valid_matrix_decomposition:
             raise ValueError(
-                f"matrix decomposition {k} not recognized, valid keys are {valid_matrix_decomposition}"
+                f"matrix decomposition {k} invalid, valid keys: {valid_matrix_decomposition}"
             )
 
         return options

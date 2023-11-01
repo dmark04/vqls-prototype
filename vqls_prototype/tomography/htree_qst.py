@@ -71,11 +71,11 @@ class HTreeQST:
             """
             ntree = len(trees)
             level_root, level_leaf = [], []
-            for iter in range(1, self.num_qubits):
+            for iter_ in range(1, self.num_qubits):
                 root, leaf = [], []
-                for iroot in range(0, int(ntree), 2**iter):
+                for iroot in range(0, int(ntree), 2**iter_):
                     new_root = trees[iroot].root
-                    new_leaf = iroot + 2 ** (iter - 1)
+                    new_leaf = iroot + 2 ** (iter_ - 1)
                     trees[iroot].paste(new_root, trees[new_leaf])
 
                     root.append(trees[iroot].root)
@@ -162,11 +162,11 @@ class HTreeQST:
         weights[0] = 1
 
         # link the weights
-        for iter in range(0, self.num_qubits):
-            roots = self.root[iter]
-            leafs = self.leaf[iter]
+        for iter_ in range(0, self.num_qubits):
+            roots = self.root[iter_]
+            leafs = self.leaf[iter_]
             signs = np.sign(
-                2 * samples[iter + 1][roots] - samples[0][roots] - samples[0][leafs]
+                2 * samples[iter_ + 1][roots] - samples[0][roots] - samples[0][leafs]
             )
             weights[leafs] = signs
 
@@ -178,14 +178,17 @@ class HTreeQST:
         Args:
             weights (np.array):
         """
+
+        # if the path is not known
         if self.path_matrix is None:
             signs = np.zeros_like(weights)
             for ip, path in enumerate(self.path_to_node):
                 signs[ip] = weights[path].prod()
             return signs
-        else:
-            mat = self.path_matrix.multiply(weights)
-            return np.multiply.reduceat(mat.data, self.idx_path_matrix[:-1])
+
+        # otherwise use the path
+        mat = self.path_matrix.multiply(weights)
+        return np.multiply.reduceat(mat.data, self.idx_path_matrix[:-1])
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_

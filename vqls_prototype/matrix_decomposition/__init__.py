@@ -12,14 +12,12 @@
 
 """
 =======================================
-Variational Quantum Linear Solver
+Matrix decomposition
 =======================================
 """
 
-from .vqls import VQLS
-from .log import VQLSLog
-from .hybrid_qst_vqls import Hybrid_QST_VQLS
-from .qst_vqls import QST_VQLS
+from .matrix_decomposition import PauliDecomposition, SymmetricDecomposition
+from .optimized_matrix_decomposition import ContractedPauliDecomposition, OptimizationMeasurementGroup
 
 
-__all__ = ["VQLS", "VQLSLog", "Hybrid_QST_VQLS", "QST_VQLS"]
+__all__ = ["PauliDecomposition", "SymmetricDecomposition", "ContractedPauliDecomposition", "OptimizationMeasurementGroup"]

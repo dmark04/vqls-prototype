@@ -13,7 +13,6 @@
 import numpy as np
 from qiskit.test import QiskitTestCase
 from qiskit.utils import algorithm_globals
-import numpy as np
 
 from qiskit import Aer
 from qiskit.circuit.library import RealAmplitudes
@@ -43,13 +42,13 @@ class TestTomography(QiskitTestCase):
         sol = full_qst.get_relative_amplitude_sign(self.parameters)
         assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
-    def test_real_qst(self):
+    def test_htree_qst(self):
         sampler = Sampler()
         htree_qst = HTreeQST(self.ansatz, sampler)
         sol = htree_qst.get_relative_amplitude_sign(self.parameters)
         assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
-    def test_real_qst(self):
+    def test_shadow_qst(self):
         sampler = Sampler()
         shadow_qst = ShadowQST(self.ansatz, sampler, 1000)
         sol = shadow_qst.get_relative_amplitude_sign(self.parameters)

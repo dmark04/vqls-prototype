@@ -1,7 +1,9 @@
 # Base solver class
 from typing import Optional, Union, List, Callable, Dict, Tuple
-import numpy as np
 from copy import deepcopy
+import logging
+import numpy as np
+
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -17,7 +19,6 @@ from .variational_linear_solver import (
 )
 
 from .log import VQLSLog
-import logging
 
 
 class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
@@ -93,7 +94,7 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
 
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
-        logger.info("Estimator : %s" % self.estimator.__class__.__module__)
+        logger.info("Estimator : %s", self.estimator.__class__.__module__)
 
     @property
     def num_qubits(self) -> int:
@@ -218,13 +219,12 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         """
         raise NotImplementedError("Please implement _validate_solve_options")
 
-    def solve(
+    def _solve(
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List[QuantumCircuit]],
         vector: Union[np.ndarray, QuantumCircuit],
-        # options: Optional[Union[Dict, None]] = None,
     ) -> VariationalLinearSolverResult:
-        raise NotImplementedError("Please implement solve")
+        raise NotImplementedError("Please implement _solve method")
 
     @staticmethod
     def get_coefficient_matrix(coeffs) -> np.ndarray:

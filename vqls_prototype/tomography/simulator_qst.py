@@ -1,8 +1,5 @@
-import qiskit
 import numpy as np
 from qiskit.quantum_info import Statevector
-from qiskit_experiments.framework import ParallelExperiment
-from qiskit_experiments.library import StateTomography
 
 
 class SimulatorQST:
@@ -21,7 +18,7 @@ class SimulatorQST:
         state_vector = (Statevector(self.circuit.bind_parameters(parameters))).data.real
         return np.sign(state_vector)
 
-    def get_statevector(self, parameters, **kwargs):
+    def get_statevector(self, parameters, **kwargs):  # pylint: disable=unused-argument
         """_summary_
 
         Args:

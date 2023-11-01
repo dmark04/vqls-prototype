@@ -1,10 +1,3 @@
-import qiskit
-import numpy as np
-from qiskit.quantum_info import Statevector
-from qiskit_experiments.framework import ParallelExperiment
-from qiskit_experiments.library import StateTomography
-
-
 def get_relative_amplitude_sign(circuit, parameters):
     """_summary_
 

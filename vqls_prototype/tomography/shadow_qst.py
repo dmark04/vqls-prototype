@@ -1,8 +1,4 @@
-import qiskit
 import numpy as np
-from qiskit.quantum_info import Statevector
-from qiskit_experiments.framework import ParallelExperiment
-from qiskit_experiments.library import StateTomography
 
 
 class ShadowQST:
@@ -47,12 +43,12 @@ class ShadowQST:
         """produces gate U such that U|psi> is in Pauli basis g"""
         if g == "X":
             return 1 / np.sqrt(2) * np.array([[1.0, 1.0], [1.0, -1.0]])
-        elif g == "Y":
+        if g == "Y":
             return 1 / np.sqrt(2) * np.array([[1.0, -1.0j], [1.0, 1.0j]])
-        elif g == "Z":
+        if g == "Z":
             return np.eye(2)
-        else:
-            raise NotImplementedError(f"Unknown gate {g}")
+        # if we haven't returned anything yet
+        raise NotImplementedError(f"Unknown gate {g}")
 
     def get_labels(self):
         rng = np.random.default_rng(1717)
@@ -85,7 +81,7 @@ class ShadowQST:
                 self.sampler.run(qc, parameters, shots=num_shots).result().quasi_dists
             )  # WARNING
             res = spl[0]
-            proba = dict()
+            proba = {}
             for k, v in res.items():
                 key = np.binary_repr(k, width=self.num_qubits)
                 val = int(num_shots * v)

@@ -7,9 +7,8 @@
 
 See https://arxiv.org/abs/1909.05820
 """
-
-from qiskit.algorithms.optimizers import Minimizer, Optimizer
 from typing import Optional, Union, List, Callable, Dict, Tuple
+from qiskit.algorithms.optimizers import Minimizer, Optimizer
 import numpy as np
 from qiskit.opflow.gradients import GradientBase
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -21,7 +20,6 @@ from qiskit.algorithms.minimum_eigen_solvers.vqe import (
     _validate_initial_point,
 )
 from qiskit.quantum_info import SparsePauliOp
-from qiskit.quantum_info import Operator
 
 from .variational_linear_solver import (
     VariationalLinearSolverResult,
@@ -171,6 +169,9 @@ class Hybrid_QST_VQLS(BaseSolver):
             "reuse_matrix": False,
             "verbose": False,
         }
+        self.vector_norm = None
+        self.vector_amplitude = None
+        self.vector_pauli_product = None
         self.options = self._validate_solve_options(options)
 
     def construct_circuit(
@@ -194,9 +195,9 @@ class Hybrid_QST_VQLS(BaseSolver):
 
         # state preparation
         if isinstance(vector, QuantumCircuit):
-            raise NotImplementedError("We didn't do that yet")
+            raise NotImplementedError("The rhs vector cannot be a quantum circuit")
 
-        elif isinstance(vector, np.ndarray):
+        if isinstance(vector, np.ndarray):
             self.vector_norm = np.linalg.norm(vector)
             self.vector_amplitude = vector / self.vector_norm
 
@@ -295,7 +296,7 @@ class Hybrid_QST_VQLS(BaseSolver):
 
         return cost
 
-    def get_cost_evaluation_function(
+    def get_cost_evaluation_function(  # pylint: disable=arguments-renamed
         self,
         norm_circuits: List,
         overlap_circuits: List,
@@ -411,12 +412,14 @@ class Hybrid_QST_VQLS(BaseSolver):
                 if k not in options.keys():
                     options[k] = self.default_solve_options[k]
 
-        if options["use_overlap_test"] != False:
-            raise ValueError("Overlap test not implemented for evqls")
-        if options["use_local_cost_function"] != False:
-            raise ValueError("local cost function not implemented for evqls")
+        if options["use_overlap_test"]:
+            raise ValueError("Overlap test not implemented for hybrid qst vqls")
+        if options["use_local_cost_function"]:
+            raise ValueError("local cost function not implemented for hybrid qst vqls")
         if options["matrix_decomposition"] != "optimized_pauli":
-            raise ValueError("Matrix decomposition must be optimied pauli for evqls")
+            raise ValueError(
+                "Matrix decomposition must be optimied pauli for hybrid qst vqls"
+            )
 
         return options
 

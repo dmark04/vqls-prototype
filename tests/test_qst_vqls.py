@@ -18,7 +18,7 @@ from qiskit.test import QiskitTestCase
 
 import numpy as np
 
-from qiskit import BasicAer, QuantumCircuit
+from qiskit import BasicAer
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.utils import algorithm_globals
 
@@ -70,10 +70,10 @@ class TestQSTVQLS(QiskitTestCase):
                     estimator,
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
-                    callback=self.log.update,
+                    options=opt,
                     sampler=sampler,
                 )
-                _ = vqls.solve(matrix, rhs, opt)
+                _ = vqls.solve(matrix, rhs)
 
 
 if __name__ == "__main__":

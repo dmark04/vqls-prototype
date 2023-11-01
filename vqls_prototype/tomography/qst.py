@@ -1,8 +1,5 @@
-import qiskit
 import numpy as np
-from qiskit.quantum_info import Operator
-from qiskit_experiments.framework import ParallelExperiment
-from qiskit_experiments.library import StateTomography
+from qiskit_experiments.library import StateTomography  # pylint: disable=import-error
 
 
 class FullQST:

@@ -77,10 +77,10 @@ class TestVQLS(QiskitTestCase):
                     estimator,
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
-                    callback=self.log.update,
+                    options=opt,
                     sampler=sampler,
                 )
-                _ = vqls.solve(matrix, rhs, opt)
+                _ = vqls.solve(matrix, rhs)
 
     def test_circuit_input_statevector(self):
         """Test the VQLS on circuits input using statevector simulator."""
@@ -109,9 +109,9 @@ class TestVQLS(QiskitTestCase):
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
                     sampler=sampler,
-                    callback=self.log.update,
+                    options=opt
                 )
-                _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs, opt)
+                _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs)
 
 
 if __name__ == "__main__":

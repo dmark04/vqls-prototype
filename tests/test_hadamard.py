@@ -11,18 +11,12 @@
 # that they have been altered from the originals.
 
 import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 
-import unittest
 from qiskit.test import QiskitTestCase
 from qiskit.utils import algorithm_globals
-import numpy as np
 
-from qiskit import BasicAer, QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.algorithms import optimizers as opt
-from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import VQLS, VQLSLog, Hybrid_QST_VQLS
 
@@ -55,7 +49,7 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            callback=self.log.update,
+            options={"matrix_decomposition": "pauli", "shots": None}
         )
 
         # define matrix/vector of the linear system
@@ -67,11 +61,8 @@ class TestHadamard(QiskitTestCase):
         self.vector /= np.linalg.norm(self.vector)
 
         # compute the cricuits
-        vqls_options = self.vqls._validate_solve_options(
-            {"matrix_decomposition": "pauli", "shots": None}
-        )
         hdmr_tests_norm, hdmr_tests_overlap = self.vqls.construct_circuit(
-            self.matrix, self.vector, vqls_options
+            self.matrix, self.vector
         )
 
         # define random parameters
@@ -90,7 +81,7 @@ class TestHadamard(QiskitTestCase):
             np.array([mat_i.coeff for mat_i in self.vqls.matrix_circuits])
         )
         cost_evaluation = self.vqls.get_cost_evaluation_function(
-            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix, vqls_options
+            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix
         )
         self.cost_ref = cost_evaluation(self.parameters)
 
@@ -103,16 +94,13 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            callback=self.log.update,
+            options={"matrix_decomposition": "contracted_pauli", "shots": None}
         )
 
-        vqls_options = vqls._validate_solve_options(
-            {"matrix_decomposition": "contracted_pauli", "shots": None}
-        )
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = vqls.construct_circuit(
-            self.matrix, self.vector, vqls_options
+            self.matrix, self.vector
         )
 
         # compute the reference values of the hadamard tests
@@ -131,14 +119,14 @@ class TestHadamard(QiskitTestCase):
             np.array([mat_i.coeff for mat_i in vqls.matrix_circuits])
         )
         cost_evaluation = vqls.get_cost_evaluation_function(
-            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix, vqls_options
+            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix
         )
         cost = cost_evaluation(self.parameters)
 
         assert np.allclose(cost, self.cost_ref)
 
     def test_optimized_pauli(self):
-        """_summary_"""
+        """Test the value obtained with the optimized pauli strings"""
 
         # set up the system
         vqls = Hybrid_QST_VQLS(
@@ -146,16 +134,13 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            callback=self.log.update,
+            options={"matrix_decomposition": "optimized_pauli", "shots": None}
         )
 
-        vqls_options = vqls._validate_solve_options(
-            {"matrix_decomposition": "optimized_pauli", "shots": None}
-        )
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = vqls.construct_circuit(
-            self.matrix, self.vector, vqls_options
+            self.matrix, self.vector
         )
         num_norm_circuits = len(hdmr_tests_norm)
         circuits = hdmr_tests_norm + hdmr_tests_overlap
@@ -182,7 +167,7 @@ class TestHadamard(QiskitTestCase):
             np.array([mat_i.coeff for mat_i in vqls.matrix_circuits])
         )
         cost_evaluation = vqls.get_cost_evaluation_function(
-            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix, vqls_options
+            hdmr_tests_norm, hdmr_tests_overlap, coefficient_matrix
         )
         cost = cost_evaluation(self.parameters)
 

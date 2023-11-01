@@ -13,7 +13,7 @@
 """An abstract class for variational linear systems solvers."""
 
 from abc import ABC, abstractmethod
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 import numpy as np
 
 from qiskit import QuantumCircuit
@@ -80,7 +80,6 @@ class VariationalLinearSolver(ABC):
         self,
         matrix: Union[np.ndarray, QuantumCircuit],
         vector: Union[np.ndarray, QuantumCircuit],
-        options: Union[Dict, None] = None,
     ) -> VariationalLinearSolverResult:
         """Solve the system and compute the observable(s)
 
