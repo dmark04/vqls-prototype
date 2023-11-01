@@ -308,7 +308,9 @@ class SymmetricDecomposition(MatrixDecomposition):
         Args:
             filename (str): name of the file
         """
-        raise NotImplementedError("Save method not implemented for this Symmetric decomposition")
+        raise NotImplementedError(
+            "Save method not implemented for this Symmetric decomposition"
+        )
 
     def load(self, filename) -> None:
         """load a decomposition from file
@@ -316,7 +318,10 @@ class SymmetricDecomposition(MatrixDecomposition):
         Args:
             filename (str): name of the file
         """
-        raise NotImplementedError("Load method not implemented for this Symmetric decomposition")
+        raise NotImplementedError(
+            "Load method not implemented for this Symmetric decomposition"
+        )
+
 
 class PauliDecomposition(MatrixDecomposition):
     """A class that represents the Pauli decomposition of a matrix."""
@@ -521,9 +526,9 @@ def get_off_diagonal_element_pauli_strings(
         return strings
 
     def get_val_xi_string(i, j, shift, size):
-        """Get the int value of the binary representation of the 
+        """Get the int value of the binary representation of the
             XI string associated with the element (i,j)
-            The XI string is a strign containing only 
+            The XI string is a strign containing only
             X and I gate and that has a non null element at (i,j)
 
         Args:
@@ -543,9 +548,7 @@ def get_off_diagonal_element_pauli_strings(
 
         # prepare the next iteration
         shift += int((i >= (size // 2)) ^ (j >= size // 2)) * (size // 2)
-        return get_val_xi_string(
-            i % (size // 2), j % (size // 2), shift, (size // 2)
-        )
+        return get_val_xi_string(i % (size // 2), j % (size // 2), shift, (size // 2))
 
     def val2xistring(val_xi_string: int, size: int) -> str:
         """convert the value of the bin repr of the xi sting into the xi string

@@ -17,17 +17,16 @@ complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
 
 
-
 class ContractedPauliDecomposition(PauliDecomposition):
-    """A class that represents the Pauli decomposition of a matrix with added 
+    """A class that represents the Pauli decomposition of a matrix with added
     attributes representing the simplification of the Al.T Am terms.
 
-    We first contract the Al.T Am terms in a single Pauli string and 
-    indentify unique pauli strings. This leads to a first considerable reduction 
+    We first contract the Al.T Am terms in a single Pauli string and
+    indentify unique pauli strings. This leads to a first considerable reduction
     of the number of gates
 
-    We then replace the hadammard test by direct measurement on the unique pauli strings. 
-    Since some of the unique pauli strings are qubit wise commutatives 
+    We then replace the hadammard test by direct measurement on the unique pauli strings.
+    Since some of the unique pauli strings are qubit wise commutatives
     we can measure a reduced number of circuits
     """
 
@@ -171,7 +170,7 @@ class ContractedPauliDecomposition(PauliDecomposition):
 
 
 @dataclass
-class OptimizationMeasurementGroup():
+class OptimizationMeasurementGroup:
     cluster: OrderedDict
     eigenvalues: List
     index_mapping: List
@@ -363,8 +362,8 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         return processed_strings
 
     def group_contracted_terms(self, return_group=False):
-        """Finds the qubit wise commutating operator to further 
-            optimize the number of measurements."""
+        """Finds the qubit wise commutating operator to further
+        optimize the number of measurements."""
 
         qwc_cluster = self._cluster_graph_fast()
 
