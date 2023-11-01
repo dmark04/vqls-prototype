@@ -1,30 +1,34 @@
 """Methods to decompose a matrix into quantum circuits"""
+import itertools
 from dataclasses import dataclass
-from collections import namedtuple, OrderedDict
-from itertools import product
+from collections import OrderedDict
 from typing import Optional, Union, List, Tuple, TypeVar
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 from qiskit.circuit import QuantumCircuit
 import networkx as nx
-from .matrix_decomposition import PauliDecomposition
 from tqdm import tqdm
+
+from .matrix_decomposition import PauliDecomposition
+
 
 complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
-import itertools
+
 
 
 class ContractedPauliDecomposition(PauliDecomposition):
-    """A class that represents the Pauli decomposition of a matrix with added attributes
-    representing the simplification of the Al.T Am terms.
+    """A class that represents the Pauli decomposition of a matrix with added 
+    attributes representing the simplification of the Al.T Am terms.
 
-    We first contract the Al.T Am terms in a single Pauli string and indentify unique pauli strings.
-    This leads to a first considerable reduction of the number of gates
+    We first contract the Al.T Am terms in a single Pauli string and 
+    indentify unique pauli strings. This leads to a first considerable reduction 
+    of the number of gates
 
-    We then replace the hadammard test by direct measurement on the unique pauli strings. Since some
-    of the unique pauli strings are qubit wise commutatives we can measure a reduced number of circuits
+    We then replace the hadammard test by direct measurement on the unique pauli strings. 
+    Since some of the unique pauli strings are qubit wise commutatives 
+    we can measure a reduced number of circuits
     """
 
     contraction_dict = {
@@ -85,7 +89,7 @@ class ContractedPauliDecomposition(PauliDecomposition):
         number_existing_circuits = 0
         nstrings = len(self.strings)
         str_len = range(self.num_qubits)
-        index_contracted_pauli = dict()
+        index_contracted_pauli = {}
 
         # loop over combination of gates
         for i1 in tqdm(range(nstrings)):
@@ -167,7 +171,7 @@ class ContractedPauliDecomposition(PauliDecomposition):
 
 
 @dataclass
-class OptimizationMeasurementGroup(object):
+class OptimizationMeasurementGroup():
     cluster: OrderedDict
     eigenvalues: List
     index_mapping: List
@@ -359,7 +363,8 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         return processed_strings
 
     def group_contracted_terms(self, return_group=False):
-        """Finds the qubit wise commutating operator to further optimize the number of measurements."""
+        """Finds the qubit wise commutating operator to further 
+            optimize the number of measurements."""
 
         qwc_cluster = self._cluster_graph_fast()
 

@@ -1,8 +1,9 @@
 """Methods to decompose a matrix into quantum circuits"""
-from collections import namedtuple, OrderedDict
+from itertools import chain, combinations
+from collections import namedtuple
 from itertools import product
 from typing import Optional, Union, List, Tuple, TypeVar, cast
-from itertools import chain, combinations
+
 
 import numpy as np
 from numpy.testing import assert_
@@ -11,9 +12,9 @@ import scipy.linalg as spla
 import scipy.sparse as spsp
 
 from qiskit.circuit import QuantumCircuit
-from qiskit.quantum_info import Operator, Pauli, SparsePauliOp
+from qiskit.quantum_info import Operator, SparsePauliOp
 from tqdm import tqdm
-import networkx as nx
+
 
 complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
@@ -301,6 +302,21 @@ class SymmetricDecomposition(MatrixDecomposition):
 
         return unit_coeffs, unitary_matrices, circuits
 
+    def save(self, filename) -> None:
+        """save the decomposition for future use
+
+        Args:
+            filename (str): name of the file
+        """
+        raise NotImplementedError("Save method not implemented for this Symmetric decomposition")
+
+    def load(self, filename) -> None:
+        """load a decomposition from file
+
+        Args:
+            filename (str): name of the file
+        """
+        raise NotImplementedError("Load method not implemented for this Symmetric decomposition")
 
 class PauliDecomposition(MatrixDecomposition):
     """A class that represents the Pauli decomposition of a matrix."""
@@ -359,7 +375,7 @@ class PauliDecomposition(MatrixDecomposition):
         Returns:
             List: list of pauli strings
         """
-
+        # if we use the sparse decomposition
         if self.use_sparse:
             # for now convert to coo and extract indices
             coo_mat = self._matrix.tocoo()
@@ -378,8 +394,8 @@ class PauliDecomposition(MatrixDecomposition):
 
             return list(set(possible_pauli_strings))
 
-        else:
-            return product(self.basis, repeat=self.num_qubits)
+        # if we use the full decomposition
+        return product(self.basis, repeat=self.num_qubits)
 
     def decompose_matrix(
         self,
@@ -451,7 +467,7 @@ def get_off_diagonal_element_pauli_strings(
     """
 
     x_matrix = np.array([[0, 1], [1, 0]])
-    shift = 0
+    # shift = 0
 
     def powerset(iterable: List) -> List:
         """Create a powerset (0,2) -> [(), (0), (2), (0,2)]
@@ -505,8 +521,10 @@ def get_off_diagonal_element_pauli_strings(
         return strings
 
     def get_val_xi_string(i, j, shift, size):
-        """Get the int value of the binary representation of the XI string associated with the element (i,j)
-            The XI string is a strign containing only X and I gate and that has a non null element at (i,j)
+        """Get the int value of the binary representation of the 
+            XI string associated with the element (i,j)
+            The XI string is a strign containing only 
+            X and I gate and that has a non null element at (i,j)
 
         Args:
             i (int): row index
@@ -522,13 +540,14 @@ def get_off_diagonal_element_pauli_strings(
 
         if size == 2:
             return x_matrix[i, j] + shift
-        else:
-            shift += int((i >= (size // 2)) ^ (j >= size // 2)) * (size // 2)
-            return get_val_xi_string(
-                i % (size // 2), j % (size // 2), shift, (size // 2)
-            )
 
-    def val2xistring(val: int, size: int) -> str:
+        # prepare the next iteration
+        shift += int((i >= (size // 2)) ^ (j >= size // 2)) * (size // 2)
+        return get_val_xi_string(
+            i % (size // 2), j % (size // 2), shift, (size // 2)
+        )
+
+    def val2xistring(val_xi_string: int, size: int) -> str:
         """convert the value of the bin repr of the xi sting into the xi string
 
         Args:
