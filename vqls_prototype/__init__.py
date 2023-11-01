@@ -19,7 +19,7 @@ Variational Quantum Linear Solver
 
 from importlib_metadata import version as metadata_version, PackageNotFoundError
 
-from .template_module import TemplateClass
+
 from .solver.vqls import VQLS
 from .solver.log import VQLSLog
 from .solver.hybrid_qst_vqls import Hybrid_QST_VQLS
