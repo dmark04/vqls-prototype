@@ -61,8 +61,10 @@ class ContractedPauliDecomposition(PauliDecomposition):
         coefficients: Optional[
             Union[float, complex, List[float], List[complex]]
         ] = None,
+        load: Optional[str] = None,
+        sparse: Optional[bool] = False
     ):
-        super().__init__(matrix, circuits, coefficients)
+        super().__init__(matrix, circuits, coefficients, load, sparse)
         self.contract_pauli_terms(build_circuits=True)
 
     def contract_pauli_terms(

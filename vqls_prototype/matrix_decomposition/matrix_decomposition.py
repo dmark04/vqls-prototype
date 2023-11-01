@@ -2,6 +2,7 @@
 from collections import namedtuple, OrderedDict
 from itertools import product
 from typing import Optional, Union, List, Tuple, TypeVar, cast
+from itertools import chain, combinations
 
 import numpy as np
 from numpy.testing import assert_
@@ -45,6 +46,7 @@ class MatrixDecomposition:
         coefficients: Optional[
             Union[float, complex, List[float], List[complex]]
         ] = None,
+        load: Optional[str] = None,
     ):
         """Decompose a matrix representing quantum circuits
 
@@ -57,9 +59,13 @@ class MatrixDecomposition:
             coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional):
                 coefficients associated with the input quantum circuits; `None` is
                 valid only for a circuit with 1 element. Defaults to None.
+            load (Optional[str]): filename to load the decomposition from
         """
 
-        if matrix is not None:  # ignore circuits & coefficients
+        if load is not None:
+            self._coefficients, self._matrices, self._circuits = self.load(load)
+
+        elif matrix is not None:  # ignore circuits & coefficients
             self.sparse_matrix = spsp.issparse(matrix)
             self._matrix, self.num_qubits = self._validate_matrix(matrix)
             self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
@@ -193,7 +199,22 @@ class MatrixDecomposition:
         self,
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
+    
+    def save(self, filename) -> None:
+        """save the decomposition for future use
 
+        Args:
+            filename (str): name of the file
+        """
+        raise NotImplementedError("Save method not implemented for this decomposition")
+    
+    def load(self, filename) -> None:
+        """load a decomposition from file
+
+        Args:
+            filename (str): name of the file
+        """
+        raise NotImplementedError("Load method not implemented for this decomposition")
 
 class SymmetricDecomposition(MatrixDecomposition):
     """
@@ -284,6 +305,33 @@ class PauliDecomposition(MatrixDecomposition):
     """A class that represents the Pauli decomposition of a matrix."""
 
     basis = "IXYZ"
+    def __init__(
+        self,
+        matrix: Optional[npt.NDArray] = None,
+        circuits: Optional[Union[QuantumCircuit, List[QuantumCircuit]]] = None,
+        coefficients: Optional[
+            Union[float, complex, List[float], List[complex]]
+        ] = None,
+        load: Optional[str] = None,
+        sparse: Optional[bool] = False
+    ):
+        """Decompose a matrix representing quantum circuits
+
+        Args:
+            matrix (Optional[npt.NDArray], optional): Array to decompose;
+                only relevant in derived classes where
+                `self.decompose_matrix()` has been implemented. Defaults to None.
+            circuits (Optional[Union[QuantumCircuit, List[QuantumCircuit]]], optional):
+                quantum circuits representing the matrix. Defaults to None.
+            coefficients (Optional[ Union[float, complex, List[float], List[complex]] ], optional):
+                coefficients associated with the input quantum circuits; `None` is
+                valid only for a circuit with 1 element. Defaults to None.
+            load (Optional[str]): filename to load the decomposition from
+            sparse (optional[bool]): use a sparse decomposition
+        """
+        self.use_sparse = sparse
+        super().__init__(matrix, circuits, coefficients, load)
+        
 
     @staticmethod
     def _create_circuit(pauli_string: str) -> QuantumCircuit:
@@ -304,6 +352,33 @@ class PauliDecomposition(MatrixDecomposition):
                 getattr(circuit, gate.lower())(iqbit)
         return circuit
 
+
+    def get_possible_pauli_strings(self) -> List:
+        """Return a list of all possible Pauli strings
+
+        Returns:
+            List: list of pauli strings
+        """
+
+        if self.use_sparse:
+            # for now convert to coo and extract indices
+            coo_mat = self._matrix.tocoo()
+            idx_row, idx_col = coo_mat.row, coo_mat.col
+
+            # get the diagonal pauli strings
+            matrix_size = coo_mat.shape[0]
+            possible_pauli_strings = get_diagonal_elements_pauli_string(matrix_size)
+
+            # add off diagonal pauli strings
+            for irow, icol in zip(idx_row, idx_col):
+                if irow != icol:
+                    possible_pauli_strings += get_off_diagonal_element_pauli_strings(irow, icol, matrix_size)
+
+            return list(set(possible_pauli_strings))
+        
+        else:
+            return product(self.basis, repeat=self.num_qubits)
+
     def decompose_matrix(
         self,
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
@@ -318,7 +393,8 @@ class PauliDecomposition(MatrixDecomposition):
         prefactor = 1.0 / (2**self.num_qubits)
         unit_mats, coeffs, circuits = [], [], []
         self.strings = []
-        for pauli_gates in tqdm(product(self.basis, repeat=self.num_qubits)):
+        possible_pauli_strings = self.get_possible_pauli_strings()
+        for pauli_gates in tqdm(possible_pauli_strings):
             pauli_string = "".join(pauli_gates)
             pauli_op = SparsePauliOp(pauli_string) # Pauli(pauli_string)
             # pauli_matrix = pauli_op.to_matrix()
@@ -333,7 +409,155 @@ class PauliDecomposition(MatrixDecomposition):
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
-                # unit_mats.append(pauli_matrix)
                 circuits.append(self._create_circuit(pauli_string))
 
         return np.array(coeffs, dtype=np.cdouble), unit_mats, circuits
+
+    def save(self, filename: str) -> None:
+        """save the decomposition for future use
+
+        Args:
+            filename (str): name of the file
+        """
+        np.save(filename, np.stack((self.strings,self.coefficients)))
+    
+    def load(self, filename) -> None:
+        """load a decomposition from file
+
+        Args:
+            filename (str): name of the file
+        """
+        self.strings, self.coefficients = np.load(filename)
+        self.circuits = []
+        for pauli_string in self.strings:
+            self.circuits.append(self._create_circuit(pauli_string))
+
+
+
+def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_size: int) -> List:
+    """Get the pauli strings associated with the index (i,j) of a matrix element of size matrix_size
+
+    Args:
+        idx_row (int): row index of the element
+        idx_col (int): column index of the element
+        matrix_size (int): size of the matrix
+
+    Returns:
+        List: list of pauli strings associated with that element
+    """
+
+    x_matrix = np.array([[0,1],[1,0]])
+    shift = 0
+
+    def powerset(iterable: List) -> List:
+        """Create a powerset (0,2) -> [(), (0), (2), (0,2)]
+
+        Args:
+            iterable (list): indices
+
+        Returns:
+            iterator: powerset
+        """
+        s = list(iterable)
+        return chain.from_iterable(combinations(s,  r) for r in range(len(s)+1))
+
+    def iz_sub(xi_string: str) -> List:
+        """Returns a list of strings containing all substituion of I by Z gates
+
+        Args:
+            xi_string (str): Pauli string cointaining only I and X gates
+
+        Returns:
+            List: List of combinations
+        """
+        strings = []
+        index_id = [i for i, v in enumerate(list(xi_string)) if v == 'I']
+        pset = powerset(index_id)
+        next(pset)
+        for idx in pset:
+            new_string = list(xi_string)
+            for r in idx:
+                new_string[r] = 'Z'
+            strings.append(''.join(new_string))
+        return strings
+
+    def xy_sub(xi_string: str) -> List:
+        """Returns a list of strings containing all even substituions of X by Y gates
+
+        Args:
+            xi_string (str): Pauli string cointaining only I and X gates
+
+        Returns:
+            List: List of combinations
+        """
+        strings = []
+        index_id = [i for i, v in enumerate(list(xi_string)) if v == 'X']
+        pset = [ps for ps in powerset(index_id) if len(ps)%2 == 0]
+        for idx in pset[1:]:
+            new_string = list(xi_string)
+            for r in idx:
+                new_string[r] = 'Y'
+            strings.append(''.join(new_string))
+        return strings
+    
+    def get_val_xi_string(i, j, shift, size):
+        """Get the int value of the binary representation of the XI string associated with the element (i,j)  
+            The XI string is a strign containing only X and I gate and that has a non null element at (i,j)
+
+        Args:
+            i (int): row index
+            j (int): column index
+            shift (int): value of the shift
+            size (int): size of the matrix
+
+        Returns:
+            int: value of the bin repr of the string e.g.:
+                    1 = 001 => IIX        
+                    5 = 101 => XIX  
+        """
+
+        if size == 2:
+            return x_matrix[i,j] + shift
+        else :
+            
+            shift += int((i >= (size//2)) ^ (j >= size // 2)) * (size//2)
+            return get_val_xi_string(i % (size//2), j % (size//2), shift, (size//2))
+    
+    def val2xistring(val: int, size: int) -> str:
+        """convert the value of the bin repr of the xi sting into the xi string
+
+        Args:
+            val (int): value of the bin repr of the xi_str
+
+        Returns:
+            str: xi string
+        """
+        return np.binary_repr(val_xi_string, int(np.log2(size))).replace('0','I').replace('1','X')
+    
+    # get the val of the bin rep of the xi string
+    val_xi_string =  get_val_xi_string(idx_row, idx_col, 0, matrix_size)
+
+    # convert value to pauli string repre
+    xi_string = val2xistring(val_xi_string, matrix_size)
+
+    # get the strings with I->Z substitutions
+    iz_sub_strings = iz_sub(xi_string)
+
+    # get the strings with XX -> YY substitutions
+    xy_sub_strings = xy_sub(xi_string) 
+
+    return [xi_string] + iz_sub_strings + xy_sub_strings
+
+
+def get_diagonal_elements_pauli_string(matrix_size: int) -> List:
+    """Get the combination of I and Z gates to encode the diagonal
+
+    Args:
+        matrix_size (int): size of the matrix
+    """
+    num_qubits = int(np.log2(matrix_size))
+    return list(product('IZ', repeat=num_qubits))
+
+
+
+    
