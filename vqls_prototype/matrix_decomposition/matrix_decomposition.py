@@ -2,7 +2,7 @@
 from itertools import chain, combinations
 from collections import namedtuple
 from itertools import product
-from typing import Optional, Union, List, Tuple, TypeVar, cast
+from typing import Optional, Union, List, Tuple, TypeVar, cast, Iterator
 
 
 import numpy as np
@@ -64,7 +64,7 @@ class MatrixDecomposition:
         """
 
         if load is not None:
-            self._coefficients, self._matrices, self._circuits = self.load(load)
+            self.load(load)
 
         elif matrix is not None:  # ignore circuits & coefficients
             self.sparse_matrix = spsp.issparse(matrix)
@@ -158,10 +158,28 @@ class MatrixDecomposition:
         """circuits of the decomposition"""
         return self._circuits
 
+    @circuits.setter
+    def circuits(self, circuits: List[QuantumCircuit]) -> None:
+        """Set new circuits
+
+        Args:
+            circuits (List[QuantumCircuit]): new circuits
+        """
+        self._circuits = circuits
+
     @property
     def coefficients(self) -> complex_array_type:
         """coefficients of the decomposition."""
         return self._coefficients
+
+    @coefficients.setter
+    def coefficients(self, new_coefficients: np.ndarray) -> None:
+        """Set the values of the coefficients
+
+        Args:
+            new_coefficients (np.ndarray): new values
+        """
+        self._coefficients = new_coefficients
 
     @property
     def matrices(self) -> List[complex_array_type]:
@@ -330,7 +348,7 @@ class PauliDecomposition(MatrixDecomposition):
 
     def __init__(
         self,
-        matrix: Optional[npt.NDArray] = None,
+        matrix: Optional[Union[npt.NDArray, spsp.csr_array]] = None,
         circuits: Optional[Union[QuantumCircuit, List[QuantumCircuit]]] = None,
         coefficients: Optional[
             Union[float, complex, List[float], List[complex]]
@@ -380,6 +398,9 @@ class PauliDecomposition(MatrixDecomposition):
         Returns:
             List: list of pauli strings
         """
+
+        assert isinstance(self._matrix, spsp.csr_array)
+
         # if we use the sparse decomposition
         if self.use_sparse:
             # for now convert to coo and extract indices
@@ -400,7 +421,7 @@ class PauliDecomposition(MatrixDecomposition):
             return list(set(possible_pauli_strings))
 
         # if we use the full decomposition
-        return product(self.basis, repeat=self.num_qubits)
+        return list(product(self.basis, repeat=self.num_qubits))
 
     def decompose_matrix(
         self,
@@ -414,7 +435,8 @@ class PauliDecomposition(MatrixDecomposition):
         """
 
         prefactor = 1.0 / (2**self.num_qubits)
-        unit_mats, coeffs, circuits = [], [], []
+        unit_mats: List[complex_array_type] = []
+        coeffs, circuits = [], []
         self.strings = []
         possible_pauli_strings = self.get_possible_pauli_strings()
         for pauli_gates in tqdm(possible_pauli_strings):
@@ -428,7 +450,7 @@ class PauliDecomposition(MatrixDecomposition):
                     pauli_op.to_matrix(sparse=True) @ self.matrix
                 ).trace()
             else:
-                coef: complex_array_type = np.einsum("ij,ji", pauli_op, self.matrix)
+                coef: complex_array_type = np.einsum("ij,ji", pauli_op, self.matrix)  # type: ignore
 
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
@@ -451,7 +473,8 @@ class PauliDecomposition(MatrixDecomposition):
         Args:
             filename (str): name of the file
         """
-        self.strings, self.coefficients = np.load(filename)
+        pauli_strings, coeffs = np.load(filename)
+        self.strings
         self.circuits = []
         for pauli_string in self.strings:
             self.circuits.append(self._create_circuit(pauli_string))
@@ -474,7 +497,7 @@ def get_off_diagonal_element_pauli_strings(
     x_matrix = np.array([[0, 1], [1, 0]])
     # shift = 0
 
-    def powerset(iterable: List) -> List:
+    def powerset(iterable: List) -> Iterator:
         """Create a powerset (0,2) -> [(), (0), (2), (0,2)]
 
         Args:

@@ -69,9 +69,7 @@ class ContractedPauliDecomposition(PauliDecomposition):
         super().__init__(matrix, circuits, coefficients, load, sparse)
         self.contract_pauli_terms(build_circuits=True)
 
-    def contract_pauli_terms(
-        self, build_circuits=True
-    ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
+    def contract_pauli_terms(self, build_circuits=True) -> None:
         """Compute the contractions of the Pauli Strings.
 
         Returns:
@@ -95,7 +93,7 @@ class ContractedPauliDecomposition(PauliDecomposition):
             for i2 in range(i1 + 1, nstrings):
                 # extract pauli strings
                 pauli_string_1, pauli_string_2 = self.strings[i1], self.strings[i2]
-                contracted_pauli_string, contracted_coefficient = "", 1.0
+                contracted_pauli_string, contracted_coefficient = "", 1.0 + 0.0j
 
                 # contract pauli gates qubit wise
                 for ip in str_len:

@@ -26,6 +26,7 @@ from .variational_linear_solver import (
     VariationalLinearSolverResult,
 )
 
+from ..matrix_decomposition.matrix_decomposition import MatrixDecomposition
 
 from ..matrix_decomposition.optimized_matrix_decomposition import (
     ContractedPauliDecomposition,
@@ -179,7 +180,7 @@ class QST_VQLS(BaseSolver):
 
     def preprocessing_matrices(
         self,
-        matrix: Union[np.ndarray, QuantumCircuit, List],
+        matrix: Union[np.ndarray, QuantumCircuit, List, ContractedPauliDecomposition],
         vector: Union[np.ndarray, QuantumCircuit],
     ) -> None:
         """Returns the a list of circuits required to compute the expectation value
@@ -201,8 +202,8 @@ class QST_VQLS(BaseSolver):
             raise NotImplementedError("We didn't do that yet")
 
         if isinstance(vector, np.ndarray):
-            self.vector_norm = np.linalg.norm(vector)
-            self.vector_amplitude = vector / self.vector_norm
+            self.vector_norm = np.linalg.norm(vector)  # type: ignore
+            self.vector_amplitude = vector / self.vector_norm  # type: ignore
 
         if (self.options["reuse_matrix"] is True) and (
             self.matrix_circuits is not None
@@ -214,8 +215,8 @@ class QST_VQLS(BaseSolver):
                 self.matrix_circuits = ContractedPauliDecomposition(matrix, vector)
 
             # a single circuit
-            elif issubclass(matrix, ContractedPauliDecomposition):
-                self.matrix_circuits = matrix
+            elif issubclass(matrix, ContractedPauliDecomposition):  # type: ignore
+                self.matrix_circuits = matrix  # type: ignore
 
             else:
                 raise ValueError(
@@ -338,7 +339,7 @@ class QST_VQLS(BaseSolver):
 
         return cost
 
-    def get_cost_evaluation_function(  # pylint: disable=arguments-differ
+    def get_cost_evaluation_function(  # type: ignore[override] # pylint: disable=arguments-differ
         self,
         coefficient_matrix: np.ndarray,
     ) -> Callable[[np.ndarray], Union[float, List[float]]]:
@@ -520,7 +521,7 @@ class QST_VQLS(BaseSolver):
         solution.state = self.ansatz.assign_parameters(solution.optimal_parameters)
 
         # solution vector
-        solution.vector = self.tomography_calculator.get_statevector(
+        solution.vector = self.tomography_calculator.get_statevector(  # type: ignore
             solution.optimal_point
         )
 

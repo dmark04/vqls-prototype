@@ -198,8 +198,8 @@ class Hybrid_QST_VQLS(BaseSolver):
             raise NotImplementedError("The rhs vector cannot be a quantum circuit")
 
         if isinstance(vector, np.ndarray):
-            self.vector_norm = np.linalg.norm(vector)
-            self.vector_amplitude = vector / self.vector_norm
+            self.vector_norm = np.linalg.norm(vector)  # type: ignore
+            self.vector_amplitude = vector / self.vector_norm  # type: ignore
 
         if (self.options["reuse_matrix"] is True) and (
             self.matrix_circuits is not None
@@ -212,8 +212,8 @@ class Hybrid_QST_VQLS(BaseSolver):
                 self.matrix_circuits = OptimizedPauliDecomposition(matrix, vector)
 
             # a single circuit
-            elif issubclass(matrix, OptimizedPauliDecomposition):
-                self.matrix_circuits = matrix
+            elif issubclass(matrix, OptimizedPauliDecomposition):  # type: ignore
+                self.matrix_circuits = matrix  # type: ignore
 
             else:
                 raise ValueError(
@@ -232,7 +232,7 @@ class Hybrid_QST_VQLS(BaseSolver):
         circuits = []
         for (
             circ
-        ) in self.matrix_circuits.optimized_measurement.shared_basis_transformation:
+        ) in self.matrix_circuits.optimized_measurement.shared_basis_transformation:  # type: ignore
             circuits.append(
                 DirectHadamardTest(
                     operators=circ,
@@ -430,15 +430,15 @@ class Hybrid_QST_VQLS(BaseSolver):
             tomography (str): the name of the tomography
         """
         if tomography == "simulator":
-            self.tomography_calculator = SimulatorQST(self._ansatz)
+            self.tomography_calculator = SimulatorQST(self._ansatz)  # type: ignore
         elif tomography == "htree":
-            self.tomography_calculator = HTreeQST(self._ansatz, self.sampler)
+            self.tomography_calculator = HTreeQST(self._ansatz, self.sampler)  # type: ignore
         elif tomography == "full":
-            self.tomography_calculator = FullQST(
+            self.tomography_calculator = FullQST(  # type: ignore
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
         elif tomography == "shadow":
-            self.tomography_calculator = ShadowQST(
+            self.tomography_calculator = ShadowQST(  # type: ignore
                 self._ansatz, self.sampler, num_shadows
             )
         else:
@@ -527,10 +527,10 @@ class Hybrid_QST_VQLS(BaseSolver):
         samples = BatchDirectHadammardTest(norm_circuits).get_values(
             self.sampler, solution.optimal_point
         )
-        solution.vector = self.tomography_calculator.get_statevector(
+        solution.vector = self.tomography_calculator.get_statevector(  # type: ignore
             solution.optimal_point,
             samples=self.reformat_samples_for_shadows(samples),
-            labels=self.matrix_circuits.optimized_measurement.shared_basis_string,
+            labels=self.matrix_circuits.optimized_measurement.shared_basis_string,  # type: ignore
         )
 
         return solution

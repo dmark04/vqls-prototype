@@ -18,6 +18,7 @@ from .variational_linear_solver import (
     VariationalLinearSolverResult,
 )
 
+from ..matrix_decomposition.matrix_decomposition import MatrixDecomposition
 from .log import VQLSLog
 
 
@@ -90,7 +91,7 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         self._eval_count = 0
 
         self.vector_circuit = QuantumCircuit(0)
-        self.matrix_circuits = None  # QuantumCircuit(0)
+        self.matrix_circuits: MatrixDecomposition = None  # QuantumCircuit(0)
 
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
@@ -158,14 +159,12 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         self.optimizer.set_max_evals_grouped(max_evals_grouped)
 
     @property
-    def callback(self) -> Optional[Callable[[int, np.ndarray, float, float], None]]:
+    def callback(self) -> Callable[[int, float, np.ndarray], None]:
         """Returns callback"""
         return self._callback
 
     @callback.setter
-    def callback(
-        self, callback: Optional[Callable[[int, np.ndarray, float, float], None]]
-    ):
+    def callback(self, callback: Callable[[int, float, np.ndarray], None]):
         """Sets callback"""
         self._callback = callback
 

@@ -297,7 +297,9 @@ class VQLS(BaseSolver):
 
         # use measurement optimized Pauli decomposition
         if isinstance(self.matrix_circuits, OptimizedPauliDecomposition):
-            for circ in self.matrix_circuits.qwc_groups_shared_basis_transformation:
+            for (
+                circ
+            ) in self.matrix_circuits.optimized_measurement.shared_basis_transformation:
                 hdmr_tests_norm.append(
                     DirectHadamardTest(
                         operators=circ,
@@ -306,11 +308,11 @@ class VQLS(BaseSolver):
                     )
                 )
 
-        # use contracted Pauli Decomposition
+        # use contracted Pauli Decomposition: SHOULD IT BE DIRECTHADAMARDTEST ?!
         elif isinstance(self.matrix_circuits, ContractedPauliDecomposition):
             for circ in self.matrix_circuits.contracted_circuits:
                 hdmr_tests_norm.append(
-                    HadammardTest(
+                    HadammardTest(  # type: ignore[arg-type]
                         operators=[circ],
                         apply_initial_state=self._ansatz,
                         apply_measurement=False,
@@ -326,7 +328,7 @@ class VQLS(BaseSolver):
                 for jj_mat in range(ii_mat + 1, len(self.matrix_circuits)):
                     mat_j = self.matrix_circuits[jj_mat]
                     hdmr_tests_norm.append(
-                        HadammardTest(
+                        HadammardTest(  # type: ignore[arg-type]
                             operators=[mat_i.circuit.inverse(), mat_j.circuit],
                             apply_initial_state=self._ansatz,
                             apply_measurement=False,

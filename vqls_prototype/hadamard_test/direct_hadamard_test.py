@@ -146,7 +146,9 @@ class DirectHadamardTest:
 
         return np.array(val)
 
-    def get_value(self, sampler, parameter_sets: List, zne_strategy=None) -> List:
+    def get_value(
+        self, sampler, parameter_sets: List, zne_strategy=None
+    ) -> npt.NDArray[np.cdouble]:
         """Compute the value of the test
 
         Args:
