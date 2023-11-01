@@ -399,11 +399,10 @@ class PauliDecomposition(MatrixDecomposition):
             List: list of pauli strings
         """
 
-        assert isinstance(self._matrix, spsp.csr_array)
-
         # if we use the sparse decomposition
         if self.use_sparse:
             # for now convert to coo and extract indices
+            assert isinstance(self._matrix, spsp.csr_array)
             coo_mat = self._matrix.tocoo()
             idx_row, idx_col = coo_mat.row, coo_mat.col
 
