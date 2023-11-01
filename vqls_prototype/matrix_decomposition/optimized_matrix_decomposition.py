@@ -2,7 +2,7 @@
 import itertools
 from dataclasses import dataclass
 from collections import OrderedDict
-from typing import Optional, Union, List, Tuple, TypeVar
+from typing import Optional, Union, List, TypeVar
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt

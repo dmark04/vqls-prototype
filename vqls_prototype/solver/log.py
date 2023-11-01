@@ -8,8 +8,8 @@ class VQLSLog:
     values: List
     parameters: List
 
-    def update(
+    def update( # pylint: disable=unused-argument
         self, count: int, cost: float, parameters: np.ndarray
-    ) -> None:  # pylint: disable=unused-argument
+    ) -> None:
         self.values.append(cost)
         self.parameters.append(parameters)

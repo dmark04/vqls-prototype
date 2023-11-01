@@ -474,7 +474,8 @@ class PauliDecomposition(MatrixDecomposition):
             filename (str): name of the file
         """
         pauli_strings, coeffs = np.load(filename)
-        self.strings
+        self.strings = pauli_strings
+        self.coefficient = coeffs
         self.circuits = []
         for pauli_string in self.strings:
             self.circuits.append(self._create_circuit(pauli_string))

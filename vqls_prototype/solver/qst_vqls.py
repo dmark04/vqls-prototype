@@ -26,8 +26,6 @@ from .variational_linear_solver import (
     VariationalLinearSolverResult,
 )
 
-from ..matrix_decomposition.matrix_decomposition import MatrixDecomposition
-
 from ..matrix_decomposition.optimized_matrix_decomposition import (
     ContractedPauliDecomposition,
 )
