@@ -109,7 +109,7 @@ class TestVQLS(QiskitTestCase):
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
                     sampler=sampler,
-                    options=opt
+                    options=opt,
                 )
                 _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs)
 

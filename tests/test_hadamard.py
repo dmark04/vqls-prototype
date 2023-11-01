@@ -49,7 +49,7 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            options={"matrix_decomposition": "pauli", "shots": None}
+            options={"matrix_decomposition": "pauli", "shots": None},
         )
 
         # define matrix/vector of the linear system
@@ -94,9 +94,8 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            options={"matrix_decomposition": "contracted_pauli", "shots": None}
+            options={"matrix_decomposition": "contracted_pauli", "shots": None},
         )
-
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = vqls.construct_circuit(
@@ -134,9 +133,8 @@ class TestHadamard(QiskitTestCase):
             self.ansatz,
             self.optimizer,
             sampler=self.sampler,
-            options={"matrix_decomposition": "optimized_pauli", "shots": None}
+            options={"matrix_decomposition": "optimized_pauli", "shots": None},
         )
-
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = vqls.construct_circuit(

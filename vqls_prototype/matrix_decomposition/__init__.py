@@ -17,7 +17,15 @@ Matrix decomposition
 """
 
 from .matrix_decomposition import PauliDecomposition, SymmetricDecomposition
-from .optimized_matrix_decomposition import ContractedPauliDecomposition, OptimizationMeasurementGroup
+from .optimized_matrix_decomposition import (
+    ContractedPauliDecomposition,
+    OptimizationMeasurementGroup,
+)
 
 
-__all__ = ["PauliDecomposition", "SymmetricDecomposition", "ContractedPauliDecomposition", "OptimizationMeasurementGroup"]
+__all__ = [
+    "PauliDecomposition",
+    "SymmetricDecomposition",
+    "ContractedPauliDecomposition",
+    "OptimizationMeasurementGroup",
+]
