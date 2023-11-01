@@ -27,7 +27,7 @@ from .solver.qst_vqls import QST_VQLS
 
 
 try:
-    __version__ = metadata_version("prototype_template")
+    __version__ = metadata_version("vqls_prototype")
 except PackageNotFoundError:  # pragma: no cover
     # package is not installed
     pass
