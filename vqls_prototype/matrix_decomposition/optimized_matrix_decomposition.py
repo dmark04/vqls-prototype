@@ -10,9 +10,11 @@ from qiskit.circuit import QuantumCircuit
 import networkx as nx
 from .matrix_decomposition import PauliDecomposition
 from tqdm import tqdm
+
 complex_type = TypeVar("complex_type", float, complex)
 complex_array_type = npt.NDArray[np.cdouble]
 import itertools
+
 
 class ContractedPauliDecomposition(PauliDecomposition):
     """A class that represents the Pauli decomposition of a matrix with added attributes
@@ -45,14 +47,11 @@ class ContractedPauliDecomposition(PauliDecomposition):
     }
 
     inverse_contraction_dict = {
-
-        "I": [ ["I", "X", "Y"," Z"], ["I", "X", "Y"," Z"], [ 1, 1, -1,     1]    ],
-        "X": [ ["X", "I", "Y", "Z"], ["I", "X", "Z", "Z"], [ 1, 1, -1.0j, -1.0j] ],
-        "Y": [ ["Y", "I", "X", "Z"], ["I", "Y", "Z", "X"], [-1, 1, -1.0j,  1.0j] ],
-        "Z": [ ["Z", "I", "X", "Y"], ["I", "Z", "Y", "Z"], [ 1, 1,  1.0j,  1.0j] ]
-
+        "I": [["I", "X", "Y", " Z"], ["I", "X", "Y", " Z"], [1, 1, -1, 1]],
+        "X": [["X", "I", "Y", "Z"], ["I", "X", "Z", "Z"], [1, 1, -1.0j, -1.0j]],
+        "Y": [["Y", "I", "X", "Z"], ["I", "Y", "Z", "X"], [-1, 1, -1.0j, 1.0j]],
+        "Z": [["Z", "I", "X", "Y"], ["I", "Z", "Y", "Z"], [1, 1, 1.0j, 1.0j]],
     }
-
 
     def __init__(
         self,
@@ -62,14 +61,13 @@ class ContractedPauliDecomposition(PauliDecomposition):
             Union[float, complex, List[float], List[complex]]
         ] = None,
         load: Optional[str] = None,
-        sparse: Optional[bool] = False
+        sparse: Optional[bool] = False,
     ):
         super().__init__(matrix, circuits, coefficients, load, sparse)
         self.contract_pauli_terms(build_circuits=True)
 
     def contract_pauli_terms(
-        self,
-        build_circuits = True
+        self, build_circuits=True
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         """Compute the contractions of the Pauli Strings.
 
@@ -88,15 +86,14 @@ class ContractedPauliDecomposition(PauliDecomposition):
         nstrings = len(self.strings)
         str_len = range(self.num_qubits)
         index_contracted_pauli = dict()
-        
+
         # loop over combination of gates
         for i1 in tqdm(range(nstrings)):
             for i2 in range(i1 + 1, nstrings):
-
                 # extract pauli strings
                 pauli_string_1, pauli_string_2 = self.strings[i1], self.strings[i2]
                 contracted_pauli_string, contracted_coefficient = "", 1.0
-                
+
                 # contract pauli gates qubit wise
                 for ip in str_len:
                     pauli1, pauli2 = pauli_string_1[ip], pauli_string_2[ip]
@@ -120,7 +117,9 @@ class ContractedPauliDecomposition(PauliDecomposition):
                             self._create_circuit(contracted_pauli_string)
                         )
                     self.contraction_index_mapping.append(number_existing_circuits)
-                    index_contracted_pauli[contracted_pauli_string] = number_existing_circuits
+                    index_contracted_pauli[
+                        contracted_pauli_string
+                    ] = number_existing_circuits
                     number_existing_circuits += 1
 
                 # otherwise find reference of existing circuit
@@ -133,7 +132,6 @@ class ContractedPauliDecomposition(PauliDecomposition):
                 # store the contraction coefficient
                 self.contraction_coefficient.append(contracted_coefficient)
 
-
     def _find_contracted_pairs(self, pauli):
         """_summary_
 
@@ -145,10 +143,13 @@ class ContractedPauliDecomposition(PauliDecomposition):
             p1, p2, c = self.inverse_contraction_dict[p]
             first_pauli.append(p1)
             second_pauli.append(p2)
-            coefficients.append(c) 
+            coefficients.append(c)
 
-        return itertools.product(*first_pauli), itertools.product(*second_pauli), itertools.product(*coefficients)
-
+        return (
+            itertools.product(*first_pauli),
+            itertools.product(*second_pauli),
+            itertools.product(*coefficients),
+        )
 
     def post_process_contracted_norm_values(self, hdmr_values_norm):
         """Post process the measurement obtained with the direct
@@ -193,7 +194,6 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         # add the single pauli terms
         self.num_unique_norm_terms = len(self.unique_pauli_strings)
         self.num_unique_overlap_terms = len(self.strings)
-
 
         # compute the measurement optimized mapping
         self.optimized_measurement = self.group_contracted_terms()
@@ -296,15 +296,14 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         Args:
             string (_type_): _description_
         """
-        all_gates = ['I','X','Y','Z']
+        all_gates = ["I", "X", "Y", "Z"]
         basis = []
         for p in pauli_string:
-            if p == 'I':
+            if p == "I":
                 basis.append(all_gates)
-            if p != 'I':
-                basis.append(['I',p])
-        return [''.join(s) for s in itertools.product(*basis)]
-
+            if p != "I":
+                basis.append(["I", p])
+        return ["".join(s) for s in itertools.product(*basis)]
 
     def _create_qwc_graph_fast(self):
         """Creates a nx graph representing the qwc map"""
@@ -320,11 +319,12 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
                 if cs in qwc_graph.nodes:
                     if cs != pauli_string:
                         qwc_graph_edges.append([pauli_string, cs])
-            
+
         # add edges
         qwc_graph.add_edges_from(qwc_graph_edges)
 
         return qwc_graph
+
     def _cluster_graph(self, qwc_complement_graph, strategy="largest_first"):
         """Cluster the qwc graph"""
 
@@ -335,23 +335,26 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
         return qwc_groups_flat
 
     def _cluster_graph_fast(self):
-
         processed_strings = OrderedDict()
         qwc_cluster = OrderedDict()
         icluster = 0
         for pauli_string in tqdm(self.unique_pauli_strings):
-            if 'I' in pauli_string:
+            if "I" in pauli_string:
                 continue
             if pauli_string in processed_strings:
-                continue 
+                continue
             commuting_strings = self._get_commuting_strings(pauli_string)
-            commuting_strings = [cs for cs in commuting_strings if (cs not in processed_strings) and (cs in self.unique_pauli_strings)]
+            commuting_strings = [
+                cs
+                for cs in commuting_strings
+                if (cs not in processed_strings) and (cs in self.unique_pauli_strings)
+            ]
             qwc_cluster[icluster] = commuting_strings
             for cs in commuting_strings:
                 processed_strings[cs] = icluster
             icluster += 1
         if len(processed_strings.keys()) != len(self.unique_pauli_strings):
-            print('Fast Clustering failed, default to full method')
+            print("Fast Clustering failed, default to full method")
             return None
         return processed_strings
 
@@ -366,9 +369,9 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
 
             # determine the cluster
             qwc_cluster = self._cluster_graph(qwc_complement_graph)
-        
+
         if return_group:
-            return np.unique([v for _,v in qwc_cluster.items()])
+            return np.unique([v for _, v in qwc_cluster.items()])
 
         # organize the groups
         nstrings = len(self.unique_pauli_strings)
@@ -403,7 +406,9 @@ class OptimizedPauliDecomposition(ContractedPauliDecomposition):
             optimized_measurement.shared_basis_transformation.append(
                 self._create_shared_basis_circuit(shared_basis[::-1])
             )
-        optimized_measurement.shared_basis_string = np.array(optimized_measurement.shared_basis_string)
+        optimized_measurement.shared_basis_string = np.array(
+            optimized_measurement.shared_basis_string
+        )
         return optimized_measurement
 
     def get_norm_values(self, samples):

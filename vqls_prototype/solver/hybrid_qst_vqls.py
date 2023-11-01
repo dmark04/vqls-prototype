@@ -43,6 +43,7 @@ from ..tomography.shadow_qst import ShadowQST
 
 from .base_solver import BaseSolver
 
+
 class Hybrid_QST_VQLS(BaseSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
@@ -127,7 +128,7 @@ class Hybrid_QST_VQLS(BaseSolver):
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
-        options: Optional[Union[Dict, None]]  = None
+        options: Optional[Union[Dict, None]] = None,
     ) -> None:
         r"""
         Args:
@@ -150,8 +151,15 @@ class Hybrid_QST_VQLS(BaseSolver):
                 improve overall execution time. Deprecated if a gradient operator or function is
                 given.
         """
-        super().__init__(estimator, ansatz, optimizer, sampler,
-                         initial_point, gradient, max_evals_grouped)
+        super().__init__(
+            estimator,
+            ansatz,
+            optimizer,
+            sampler,
+            initial_point,
+            gradient,
+            max_evals_grouped,
+        )
 
         self.tomography_calculator = None
         self.default_solve_options = {
@@ -161,7 +169,7 @@ class Hybrid_QST_VQLS(BaseSolver):
             "tomography": "shadow",
             "shots": 4000,
             "reuse_matrix": False,
-            "verbose":False
+            "verbose": False,
         }
         self.options = self._validate_solve_options(options)
 
@@ -192,7 +200,9 @@ class Hybrid_QST_VQLS(BaseSolver):
             self.vector_norm = np.linalg.norm(vector)
             self.vector_amplitude = vector / self.vector_norm
 
-        if (self.options['reuse_matrix'] is True ) and (self.matrix_circuits is not None):
+        if (self.options["reuse_matrix"] is True) and (
+            self.matrix_circuits is not None
+        ):
             print("Warning Solver is reusing matrices")
 
         else:
@@ -278,9 +288,7 @@ class Hybrid_QST_VQLS(BaseSolver):
         norm = self._compute_normalization_term(coefficient_matrix, hdmr_values_norm)
 
         # compute the overlap terms <b|AV|0>
-        sum_terms = self._compute_global_terms(
-            coefficient_matrix, hdmr_values_overlap
-        )
+        sum_terms = self._compute_global_terms(coefficient_matrix, hdmr_values_overlap)
 
         # overall cost
         cost = 1.0 - np.real(sum_terms / norm)
@@ -327,12 +335,13 @@ class Hybrid_QST_VQLS(BaseSolver):
                 samples[:num_norm_circuits]
             )
 
+            # reconstruct the satevector from the previous measurements
+            statevector = self.tomography_calculator.get_statevector(
+                parameters,
+                samples=self.reformat_samples_for_shadows(samples[:num_norm_circuits]),
+                labels=self.matrix_circuits.optimized_measurement.shared_basis_string,
+            )
 
-            # reconstruct the satevector from the previous measurements        
-            statevector = self.tomography_calculator.get_statevector(parameters, 
-                                                                     samples=self.reformat_samples_for_shadows(samples[:num_norm_circuits]),
-                                                                     labels=self.matrix_circuits.optimized_measurement.shared_basis_string)
-            
             # compute the overlap values
             hdmr_values_overlap = self.get_overlap_values(statevector)
 
@@ -358,7 +367,6 @@ class Hybrid_QST_VQLS(BaseSolver):
 
         return cost_evaluation
 
-    
     def reformat_samples_for_shadows(self, samples):
         """_summary_
 
@@ -366,7 +374,10 @@ class Hybrid_QST_VQLS(BaseSolver):
             samples (_type_): _description_
         """
         num_qubits = self.tomography_calculator.num_qubits
-        return[{np.binary_repr(i, width=num_qubits):val for i,val in enumerate(s)} for s in samples]
+        return [
+            {np.binary_repr(i, width=num_qubits): val for i, val in enumerate(s)}
+            for s in samples
+        ]
 
     def get_overlap_values(self, statevector):
         """_summary_
@@ -377,7 +388,7 @@ class Hybrid_QST_VQLS(BaseSolver):
         Returns:
             _type_: _description_
         """
-        return np.dot(statevector,self.vector_pauli_product.T)
+        return np.dot(statevector, self.vector_pauli_product.T)
 
     def _validate_solve_options(self, options: Union[Dict, None]) -> Dict:
         """validate the options used for the solve methods
@@ -424,7 +435,9 @@ class Hybrid_QST_VQLS(BaseSolver):
                 self._ansatz, Aer.get_backend("statevector_simulator")
             )
         elif tomography == "shadow":
-            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, num_shadows)
+            self.tomography_calculator = ShadowQST(
+                self._ansatz, self.sampler, num_shadows
+            )
         else:
             raise ValueError("tomography method not recognized")
 
@@ -434,10 +447,12 @@ class Hybrid_QST_VQLS(BaseSolver):
         Returns:
             _type_: _description_
         """
-        return np.array([
-            SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
-            for pauli in self.matrix_circuits.strings
-        ])
+        return np.array(
+            [
+                SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
+                for pauli in self.matrix_circuits.strings
+            ]
+        )
 
     def _solve(
         self,
@@ -460,9 +475,7 @@ class Hybrid_QST_VQLS(BaseSolver):
         self._init_tomography(self.options["tomography"])
 
         # compute the circuits needed for the hadamard tests
-        norm_circuits, overlap_circuits = self.construct_circuit(
-            matrix, vector
-        )
+        norm_circuits, overlap_circuits = self.construct_circuit(matrix, vector)
 
         # precompute the product of pauli matrices and rhs
         self.vector_pauli_product = self.get_vector_pauli_product()
@@ -508,9 +521,13 @@ class Hybrid_QST_VQLS(BaseSolver):
         solution.state = self.ansatz.assign_parameters(solution.optimal_parameters)
 
         # solution vector
-        samples = BatchDirectHadammardTest(norm_circuits).get_values(self.sampler, solution.optimal_point)   
-        solution.vector = self.tomography_calculator.get_statevector(solution.optimal_point, 
-                                                                    samples=self.reformat_samples_for_shadows(samples),
-                                                                    labels=self.matrix_circuits.optimized_measurement.shared_basis_string)
+        samples = BatchDirectHadammardTest(norm_circuits).get_values(
+            self.sampler, solution.optimal_point
+        )
+        solution.vector = self.tomography_calculator.get_statevector(
+            solution.optimal_point,
+            samples=self.reformat_samples_for_shadows(samples),
+            labels=self.matrix_circuits.optimized_measurement.shared_basis_string,
+        )
 
         return solution

@@ -40,6 +40,7 @@ from ..tomography.shadow_qst import ShadowQST
 
 from .base_solver import BaseSolver
 
+
 class QST_VQLS(BaseSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
     of areas, such as in the solution of Partial Differential Equations, the calibration of
@@ -124,7 +125,7 @@ class QST_VQLS(BaseSolver):
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
-        options: Optional[Union[Dict, None]] = None 
+        options: Optional[Union[Dict, None]] = None,
     ) -> None:
         r"""
         Args:
@@ -148,8 +149,15 @@ class QST_VQLS(BaseSolver):
                 given.
             options: a dictionary of options for the solver
         """
-        super().__init__(estimator, ansatz, optimizer, sampler,
-                         initial_point, gradient, max_evals_grouped)
+        super().__init__(
+            estimator,
+            ansatz,
+            optimizer,
+            sampler,
+            initial_point,
+            gradient,
+            max_evals_grouped,
+        )
 
         self.tomography_calculator = None
         self.default_solve_options = {
@@ -159,7 +167,7 @@ class QST_VQLS(BaseSolver):
             "tomography": "shadow",
             "shots": 4000,
             "reuse_matrix": False,
-            "verbose":False
+            "verbose": False,
         }
         self.options = self._validate_solve_options(options)
         self.num_qubits = self.ansatz.num_qubits
@@ -191,7 +199,9 @@ class QST_VQLS(BaseSolver):
             self.vector_norm = np.linalg.norm(vector)
             self.vector_amplitude = vector / self.vector_norm
 
-        if (self.options['reuse_matrix'] is True) and (self.matrix_circuits is not None):
+        if (self.options["reuse_matrix"] is True) and (
+            self.matrix_circuits is not None
+        ):
             print("Reusing matrices")
         else:
             # general numpy matrix
@@ -222,10 +232,12 @@ class QST_VQLS(BaseSolver):
         Returns:
             _type_: _description_
         """
-        return np.array([
-            SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
-            for pauli in self.matrix_circuits.strings
-        ])
+        return np.array(
+            [
+                SparsePauliOp(pauli).to_matrix(sparse=True) @ self.vector_amplitude
+                for pauli in self.matrix_circuits.strings
+            ]
+        )
 
     def get_unique_pauli_sparse_matrix(self):
         """compute the product of pauli matrices
@@ -237,26 +249,25 @@ class QST_VQLS(BaseSolver):
             SparsePauliOp(pauli).to_matrix(sparse=True)
             for pauli in self.matrix_circuits.unique_pauli_strings
         ]
-    
+
     def get_unique_pauli_sparse_tensor(self):
-        """transforms the list of sparse pauli matrices in a sparse tensor
-        """
-        coords, data = [[],[],[]], []
+        """transforms the list of sparse pauli matrices in a sparse tensor"""
+        coords, data = [[], [], []], []
         npaulis = len(self.unique_pauli_sparse_matrix)
         size = 2**self.num_qubits
         for ip, pauli in enumerate(self.unique_pauli_sparse_matrix):
             # convert to COO format
             pauli_coo = pauli.tocoo()
             # extract data
-            local_data = pauli_coo.data.tolist() 
+            local_data = pauli_coo.data.tolist()
             nelem = len(local_data)
-            #extract coord
+            # extract coord
             data += local_data
             coords[0] += [ip] * nelem
             coords[1] += pauli_coo.row.tolist()
-            coords[2] += pauli_coo.col.tolist() 
-            
-        return sparse.COO(coords, data, shape=(npaulis,size,size))
+            coords[2] += pauli_coo.col.tolist()
+
+        return sparse.COO(coords, data, shape=(npaulis, size, size))
 
     def get_overlap_values(self, statevector):
         """_summary_
@@ -268,7 +279,7 @@ class QST_VQLS(BaseSolver):
             _type_: _description_
         """
 
-        return np.dot(statevector,self.vector_pauli_product.T)
+        return np.dot(statevector, self.vector_pauli_product.T)
 
     def get_norm_values(self, statevector):
         """_summary_
@@ -315,8 +326,7 @@ class QST_VQLS(BaseSolver):
         norm = self._compute_normalization_term(coefficient_matrix, hdmr_values_norm)
 
         # compute the overlap terms <b|AV|0>
-        sum_terms = self._compute_global_terms(
-            coefficient_matrix, hdmr_values_overlap)
+        sum_terms = self._compute_global_terms(coefficient_matrix, hdmr_values_overlap)
 
         # overall cost
         cost = 1.0 - np.real(sum_terms / norm)
@@ -436,8 +446,10 @@ class QST_VQLS(BaseSolver):
             )
         elif tomography == "shadow":
             if num_shadows is None:
-                raise ValueError('Please provide a number of shadows')
-            self.tomography_calculator = ShadowQST(self._ansatz, self.sampler, num_shadows)
+                raise ValueError("Please provide a number of shadows")
+            self.tomography_calculator = ShadowQST(
+                self._ansatz, self.sampler, num_shadows
+            )
         else:
             raise ValueError("tomography method not recognized")
 
@@ -503,6 +515,8 @@ class QST_VQLS(BaseSolver):
         solution.state = self.ansatz.assign_parameters(solution.optimal_parameters)
 
         # solution vector
-        solution.vector = self.tomography_calculator.get_statevector(solution.optimal_point)
+        solution.vector = self.tomography_calculator.get_statevector(
+            solution.optimal_point
+        )
 
         return solution

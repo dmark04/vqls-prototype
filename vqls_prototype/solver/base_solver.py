@@ -1,7 +1,7 @@
 # Base solver class
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
-from copy import deepcopy 
+from copy import deepcopy
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
@@ -17,7 +17,8 @@ from .variational_linear_solver import (
 )
 
 from .log import VQLSLog
-import logging 
+import logging
+
 
 class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
@@ -82,18 +83,17 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         self._gradient = None
         self.gradient = gradient
 
-        self.logger = VQLSLog([],[])
+        self.logger = VQLSLog([], [])
         self.callback = self.logger.update
 
         self._eval_count = 0
 
         self.vector_circuit = QuantumCircuit(0)
-        self.matrix_circuits = None #QuantumCircuit(0)
+        self.matrix_circuits = None  # QuantumCircuit(0)
 
-        
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
-        logger.info('Estimator : %s' %self.estimator.__class__.__module__)
+        logger.info("Estimator : %s" % self.estimator.__class__.__module__)
 
     @property
     def num_qubits(self) -> int:
@@ -201,7 +201,6 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         coefficient_matrix: np.ndarray,
     ) -> float:
         raise NotImplementedError("Please implement assemble_cost function")
-    
 
     def get_cost_evaluation_function(
         self,
@@ -235,7 +234,7 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
             coeffs (np.ndarray): list of complex coefficients
         """
         return coeffs[:, None].conj() @ coeffs[None, :]
-    
+
     def _compute_normalization_term(
         self,
         coeff_matrix: np.ndarray,
@@ -274,9 +273,9 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         return out.item()
 
     def _compute_global_terms(
-        self, 
-        coeff_matrix: np.ndarray, 
-        hdmr_values: np.ndarray, 
+        self,
+        coeff_matrix: np.ndarray,
+        hdmr_values: np.ndarray,
     ) -> float:
         """Compute |<b|phi>|^2
 
@@ -385,7 +384,7 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         Returns:
             VariationalLinearSolverResult: _description_
         """
-        
+
         # make a copy of the optimizers
         optimizers_list = deepcopy(self.optimizer)
 

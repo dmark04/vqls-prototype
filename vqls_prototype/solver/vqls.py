@@ -46,16 +46,17 @@ from ..hadamard_test.hadamard_test import (
 )
 
 from ..hadamard_test.hadamard_overlap_test import (
-    HadammardOverlapTest, 
-    BatchHadammardOverlapTest
+    HadammardOverlapTest,
+    BatchHadammardOverlapTest,
 )
 
 from ..hadamard_test.direct_hadamard_test import (
-    DirectHadamardTest, 
-    BatchDirectHadammardTest
+    DirectHadamardTest,
+    BatchDirectHadammardTest,
 )
 
-from .base_solver  import BaseSolver
+from .base_solver import BaseSolver
+
 
 class VQLS(BaseSolver):
     r"""Systems of linear equations arise naturally in many real-life applications in a wide range
@@ -141,7 +142,7 @@ class VQLS(BaseSolver):
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[GradientBase, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
-        options: Optional[Union[Dict, None]] = None
+        options: Optional[Union[Dict, None]] = None,
     ) -> None:
         r"""
         Args:
@@ -168,8 +169,15 @@ class VQLS(BaseSolver):
                 by the optimizer for its current set of parameters as it works towards the minimum.
                 These are: the evaluation count, the cost and the parameters for the ansatz
         """
-        super().__init__(estimator, ansatz, optimizer, sampler,
-                         initial_point, gradient, max_evals_grouped)
+        super().__init__(
+            estimator,
+            ansatz,
+            optimizer,
+            sampler,
+            initial_point,
+            gradient,
+            max_evals_grouped,
+        )
 
         self.default_solve_options = {
             "use_overlap_test": False,
@@ -177,7 +185,7 @@ class VQLS(BaseSolver):
             "matrix_decomposition": "symmetric",
             "shots": None,
             "reuse_matrix": False,
-            "verbose": False
+            "verbose": False,
         }
         self.options = self._validate_solve_options(options)
 
@@ -222,10 +230,12 @@ class VQLS(BaseSolver):
                 raise ValueError("Norm of b vector is null!")
         else:
             raise ValueError("Format of the input vector not recognized")
-        
+
         # general numpy matrix
-        if (self.options['reuse_matrix'] is True) and (self.matrix_circuits is not None):
-            print('\t VQLS : Reusing matrix decomposition for new RHS')
+        if (self.options["reuse_matrix"] is True) and (
+            self.matrix_circuits is not None
+        ):
+            print("\t VQLS : Reusing matrix decomposition for new RHS")
 
         else:
             if isinstance(matrix, np.ndarray):
@@ -405,27 +415,25 @@ class VQLS(BaseSolver):
             return hdmr_overlap_tests
 
         # or using the normal Hadamard tests
-        
+
         # Note there is an issue if we direcly pass self.vector_circuit.inverse()
-        # as an operator to the HadammardTest. 
+        # as an operator to the HadammardTest.
         # therefore we first create the controlled version of self.vector_circuit.inverse()
-        # and pass that to Hadammard test requiring not to apply control 
-        
+        # and pass that to Hadammard test requiring not to apply control
+
         # precompute the controlled version of the inverse vector circuit
-        qc_u = QuantumCircuit(self.vector_circuit.num_qubits+1)
-        qc_u.append(self.vector_circuit.inverse().control(1), 
-                    list(range(self.vector_circuit.num_qubits+1)))
-        
+        qc_u = QuantumCircuit(self.vector_circuit.num_qubits + 1)
+        qc_u.append(
+            self.vector_circuit.inverse().control(1),
+            list(range(self.vector_circuit.num_qubits + 1)),
+        )
+
         # create the tests
         hdmr_tests = []
         for mat_i in self.matrix_circuits:
             hdmr_tests.append(
                 HadammardTest(
-                    operators=[
-                        self.ansatz,
-                        mat_i.circuit,
-                        qc_u
-                    ],
+                    operators=[self.ansatz, mat_i.circuit, qc_u],
                     apply_control_to_operator=[True, True, False],
                     apply_measurement=False,
                     shots=self.options["shots"],
@@ -480,7 +488,6 @@ class VQLS(BaseSolver):
         cost = 1.0 - np.real(sum_terms / norm)
 
         return cost
-
 
     def get_cost_evaluation_function(
         self,
@@ -635,11 +642,8 @@ class VQLS(BaseSolver):
                 and solution vector of the linear system
         """
 
-        
         # compute the circuits needed for the hadamard tests
-        hdmr_tests_norm, hdmr_tests_overlap = self.construct_circuit(
-            matrix, vector
-        )
+        hdmr_tests_norm, hdmr_tests_overlap = self.construct_circuit(matrix, vector)
 
         # compute he coefficient matrix
         coefficient_matrix = self.get_coefficient_matrix(

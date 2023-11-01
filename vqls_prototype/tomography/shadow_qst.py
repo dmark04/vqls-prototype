@@ -81,9 +81,9 @@ class ShadowQST:
         samples = []
         num_shots = self.num_shadows
         for qc, _ in zip(self.list_circuits, self.counts):
-            spl = self.sampler.run(qc, 
-                             parameters,
-                             shots=num_shots).result().quasi_dists # WARNING
+            spl = (
+                self.sampler.run(qc, parameters, shots=num_shots).result().quasi_dists
+            )  # WARNING
             res = spl[0]
             proba = dict()
             for k, v in res.items():
@@ -112,15 +112,15 @@ class ShadowQST:
                     count = 0
                 else:
                     count = counts[bit]
-            # for bit, count in counts.items():
+                # for bit, count in counts.items():
                 mat = 1.0
                 for i, bi in enumerate(bit[::-1]):
                     b = self.rotGate(pauli_string[i])[int(bi), :]
                     mat = np.kron(self.Minv(1, np.outer(b.conj(), b)), mat)
                 shadows.append(mat)
                 total_count.append(count)
-        return shadows, total_count 
-        
+        return shadows, total_count
+
     def get_rho(self, samples, labels=None):
         """_summary_
 
@@ -132,7 +132,6 @@ class ShadowQST:
         """
         shadows, counts = self.get_shadows(samples, labels=labels)
         return np.average(shadows, axis=0, weights=counts)
-
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_
@@ -154,11 +153,7 @@ class ShadowQST:
             parameters (_type_): _description_
         """
         circuit = self.circuit.measure_all(inplace=False)
-        results = (
-            self.sampler.run([circuit], [parameters])
-            .result()
-            .quasi_dists
-        )
+        results = self.sampler.run([circuit], [parameters]).result().quasi_dists
         samples = []
         for res in results:
             proba = np.zeros(2**self.num_qubits)
@@ -166,7 +161,6 @@ class ShadowQST:
                 proba[k] = v
             samples.append(proba)
         return np.sqrt(samples[0])
-    
 
     def get_statevector(self, parameters, samples=None, labels=None):
         """_summary_
@@ -181,7 +175,6 @@ class ShadowQST:
         # amplitudes = np.sqrt(np.diag(rho).real)
         amplitudes = self.get_amplitudes(parameters)
         return signs * amplitudes
-    
 
     def get_observables(self, obs, parameters):
         """_summary_
@@ -193,4 +186,4 @@ class ShadowQST:
         """
         samples = self.get_samples(parameters)
         rho = self.get_rho(samples)
-        return np.trace(obs@rho)
+        return np.trace(obs @ rho)

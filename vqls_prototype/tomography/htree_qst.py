@@ -1,7 +1,8 @@
 import qiskit
 import numpy as np
 import treelib
-from scipy import sparse 
+from scipy import sparse
+
 
 class HTreeQST:
     def __init__(self, circuit, sampler, use_matrix_path=True):
@@ -28,7 +29,9 @@ class HTreeQST:
         self.path_to_node = self.get_path()
         if use_matrix_path:
             self.path_matrix = self.get_path_sparse_matrix()
-            self.idx_path_matrix = np.insert(np.cumsum(self.path_matrix.getnnz(axis=1)),0,0)
+            self.idx_path_matrix = np.insert(
+                np.cumsum(self.path_matrix.getnnz(axis=1)), 0, 0
+            )
         else:
             self.path_matrix = None
             self.idx_path_matrix = None
@@ -103,14 +106,16 @@ class HTreeQST:
 
         Returns:
             _type_: _description_
-        """ 
+        """
         row_idx, col_idx, vals = [], [], []
         for ip, path in enumerate(self.path_to_node):
             num_nodes = len(path)
-            row_idx += [ip]*num_nodes
-            col_idx += path 
-            vals += [1]*num_nodes
-        return sparse.coo_matrix((vals,(row_idx,col_idx)),shape=(self.size,self.size))
+            row_idx += [ip] * num_nodes
+            col_idx += path
+            vals += [1] * num_nodes
+        return sparse.coo_matrix(
+            (vals, (row_idx, col_idx)), shape=(self.size, self.size)
+        )
 
     def get_circuits(self):
         """_summary_

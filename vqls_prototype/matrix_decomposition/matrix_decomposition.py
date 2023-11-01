@@ -8,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_
 import numpy.typing as npt
 import scipy.linalg as spla
-import scipy.sparse as spsp 
+import scipy.sparse as spsp
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Operator, Pauli, SparsePauliOp
@@ -199,7 +199,7 @@ class MatrixDecomposition:
         self,
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
-    
+
     def save(self, filename) -> None:
         """save the decomposition for future use
 
@@ -207,7 +207,7 @@ class MatrixDecomposition:
             filename (str): name of the file
         """
         raise NotImplementedError("Save method not implemented for this decomposition")
-    
+
     def load(self, filename) -> None:
         """load a decomposition from file
 
@@ -215,6 +215,7 @@ class MatrixDecomposition:
             filename (str): name of the file
         """
         raise NotImplementedError("Load method not implemented for this decomposition")
+
 
 class SymmetricDecomposition(MatrixDecomposition):
     """
@@ -305,6 +306,7 @@ class PauliDecomposition(MatrixDecomposition):
     """A class that represents the Pauli decomposition of a matrix."""
 
     basis = "IXYZ"
+
     def __init__(
         self,
         matrix: Optional[npt.NDArray] = None,
@@ -313,7 +315,7 @@ class PauliDecomposition(MatrixDecomposition):
             Union[float, complex, List[float], List[complex]]
         ] = None,
         load: Optional[str] = None,
-        sparse: Optional[bool] = False
+        sparse: Optional[bool] = False,
     ):
         """Decompose a matrix representing quantum circuits
 
@@ -331,7 +333,6 @@ class PauliDecomposition(MatrixDecomposition):
         """
         self.use_sparse = sparse
         super().__init__(matrix, circuits, coefficients, load)
-        
 
     @staticmethod
     def _create_circuit(pauli_string: str) -> QuantumCircuit:
@@ -352,7 +353,6 @@ class PauliDecomposition(MatrixDecomposition):
                 getattr(circuit, gate.lower())(iqbit)
         return circuit
 
-
     def get_possible_pauli_strings(self) -> List:
         """Return a list of all possible Pauli strings
 
@@ -372,10 +372,12 @@ class PauliDecomposition(MatrixDecomposition):
             # add off diagonal pauli strings
             for irow, icol in zip(idx_row, idx_col):
                 if irow != icol:
-                    possible_pauli_strings += get_off_diagonal_element_pauli_strings(irow, icol, matrix_size)
+                    possible_pauli_strings += get_off_diagonal_element_pauli_strings(
+                        irow, icol, matrix_size
+                    )
 
             return list(set(possible_pauli_strings))
-        
+
         else:
             return product(self.basis, repeat=self.num_qubits)
 
@@ -396,15 +398,16 @@ class PauliDecomposition(MatrixDecomposition):
         possible_pauli_strings = self.get_possible_pauli_strings()
         for pauli_gates in tqdm(possible_pauli_strings):
             pauli_string = "".join(pauli_gates)
-            pauli_op = SparsePauliOp(pauli_string) # Pauli(pauli_string)
+            pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
             # pauli_matrix = pauli_op.to_matrix()
             # coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
             # coef: complex_array_type = np.trace(np.dot(pauli_op, self.matrix))
             if self.sparse_matrix:
-                coef: complex_array_type = (pauli_op.to_matrix(sparse=True) @ self.matrix).trace()
+                coef: complex_array_type = (
+                    pauli_op.to_matrix(sparse=True) @ self.matrix
+                ).trace()
             else:
-                coef: complex_array_type = np.einsum('ij,ji', pauli_op, self.matrix)
-
+                coef: complex_array_type = np.einsum("ij,ji", pauli_op, self.matrix)
 
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
@@ -419,8 +422,8 @@ class PauliDecomposition(MatrixDecomposition):
         Args:
             filename (str): name of the file
         """
-        np.save(filename, np.stack((self.strings,self.coefficients)))
-    
+        np.save(filename, np.stack((self.strings, self.coefficients)))
+
     def load(self, filename) -> None:
         """load a decomposition from file
 
@@ -433,8 +436,9 @@ class PauliDecomposition(MatrixDecomposition):
             self.circuits.append(self._create_circuit(pauli_string))
 
 
-
-def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_size: int) -> List:
+def get_off_diagonal_element_pauli_strings(
+    idx_row: int, idx_col: int, matrix_size: int
+) -> List:
     """Get the pauli strings associated with the index (i,j) of a matrix element of size matrix_size
 
     Args:
@@ -446,7 +450,7 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
         List: list of pauli strings associated with that element
     """
 
-    x_matrix = np.array([[0,1],[1,0]])
+    x_matrix = np.array([[0, 1], [1, 0]])
     shift = 0
 
     def powerset(iterable: List) -> List:
@@ -459,7 +463,7 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
             iterator: powerset
         """
         s = list(iterable)
-        return chain.from_iterable(combinations(s,  r) for r in range(len(s)+1))
+        return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
     def iz_sub(xi_string: str) -> List:
         """Returns a list of strings containing all substituion of I by Z gates
@@ -471,14 +475,14 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
             List: List of combinations
         """
         strings = []
-        index_id = [i for i, v in enumerate(list(xi_string)) if v == 'I']
+        index_id = [i for i, v in enumerate(list(xi_string)) if v == "I"]
         pset = powerset(index_id)
         next(pset)
         for idx in pset:
             new_string = list(xi_string)
             for r in idx:
-                new_string[r] = 'Z'
-            strings.append(''.join(new_string))
+                new_string[r] = "Z"
+            strings.append("".join(new_string))
         return strings
 
     def xy_sub(xi_string: str) -> List:
@@ -491,17 +495,17 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
             List: List of combinations
         """
         strings = []
-        index_id = [i for i, v in enumerate(list(xi_string)) if v == 'X']
-        pset = [ps for ps in powerset(index_id) if len(ps)%2 == 0]
+        index_id = [i for i, v in enumerate(list(xi_string)) if v == "X"]
+        pset = [ps for ps in powerset(index_id) if len(ps) % 2 == 0]
         for idx in pset[1:]:
             new_string = list(xi_string)
             for r in idx:
-                new_string[r] = 'Y'
-            strings.append(''.join(new_string))
+                new_string[r] = "Y"
+            strings.append("".join(new_string))
         return strings
-    
+
     def get_val_xi_string(i, j, shift, size):
-        """Get the int value of the binary representation of the XI string associated with the element (i,j)  
+        """Get the int value of the binary representation of the XI string associated with the element (i,j)
             The XI string is a strign containing only X and I gate and that has a non null element at (i,j)
 
         Args:
@@ -512,17 +516,18 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
 
         Returns:
             int: value of the bin repr of the string e.g.:
-                    1 = 001 => IIX        
-                    5 = 101 => XIX  
+                    1 = 001 => IIX
+                    5 = 101 => XIX
         """
 
         if size == 2:
-            return x_matrix[i,j] + shift
-        else :
-            
-            shift += int((i >= (size//2)) ^ (j >= size // 2)) * (size//2)
-            return get_val_xi_string(i % (size//2), j % (size//2), shift, (size//2))
-    
+            return x_matrix[i, j] + shift
+        else:
+            shift += int((i >= (size // 2)) ^ (j >= size // 2)) * (size // 2)
+            return get_val_xi_string(
+                i % (size // 2), j % (size // 2), shift, (size // 2)
+            )
+
     def val2xistring(val: int, size: int) -> str:
         """convert the value of the bin repr of the xi sting into the xi string
 
@@ -532,10 +537,14 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
         Returns:
             str: xi string
         """
-        return np.binary_repr(val_xi_string, int(np.log2(size))).replace('0','I').replace('1','X')
-    
+        return (
+            np.binary_repr(val_xi_string, int(np.log2(size)))
+            .replace("0", "I")
+            .replace("1", "X")
+        )
+
     # get the val of the bin rep of the xi string
-    val_xi_string =  get_val_xi_string(idx_row, idx_col, 0, matrix_size)
+    val_xi_string = get_val_xi_string(idx_row, idx_col, 0, matrix_size)
 
     # convert value to pauli string repre
     xi_string = val2xistring(val_xi_string, matrix_size)
@@ -544,7 +553,7 @@ def get_off_diagonal_element_pauli_strings(idx_row: int, idx_col: int, matrix_si
     iz_sub_strings = iz_sub(xi_string)
 
     # get the strings with XX -> YY substitutions
-    xy_sub_strings = xy_sub(xi_string) 
+    xy_sub_strings = xy_sub(xi_string)
 
     return [xi_string] + iz_sub_strings + xy_sub_strings
 
@@ -556,8 +565,4 @@ def get_diagonal_elements_pauli_string(matrix_size: int) -> List:
         matrix_size (int): size of the matrix
     """
     num_qubits = int(np.log2(matrix_size))
-    return list(product('IZ', repeat=num_qubits))
-
-
-
-    
+    return list(product("IZ", repeat=num_qubits))

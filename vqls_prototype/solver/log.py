@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
 
+
 @dataclass
 class VQLSLog:
     values: List
