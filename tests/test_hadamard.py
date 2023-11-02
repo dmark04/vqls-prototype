@@ -140,7 +140,9 @@ class TestHadamard(QiskitTestCase):
             options={"matrix_decomposition": "optimized_pauli", "shots": None},
         )
 
-        qst_vqls._init_tomography(qst_vqls.options["tomography"]) # pylint: disable=protected-access
+        qst_vqls._init_tomography(  # pylint: disable=protected-access
+            qst_vqls.options["tomography"]
+        )
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = qst_vqls.construct_circuit(
