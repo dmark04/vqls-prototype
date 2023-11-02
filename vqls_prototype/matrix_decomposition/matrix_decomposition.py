@@ -211,8 +211,7 @@ class MatrixDecomposition:
         Returns:
             complex_array_type: The recomposed matrix.
         """
-        coeffs, matrices = self.coefficients, self.matrices
-        return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
+        raise NotImplementedError(f"can't recompose in {self.__class__.__name__!r}")
 
     def decompose_matrix(
         self,
@@ -320,6 +319,15 @@ class SymmetricDecomposition(MatrixDecomposition):
 
         return unit_coeffs, unitary_matrices, circuits
 
+    def recompose(self) -> complex_array_type:
+        """Rebuilds the original matrix from the decomposed one.
+
+        Returns:
+            complex_array_type: The recomposed matrix.
+        """
+        coeffs, matrices = self.coefficients, self.matrices
+        return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
+
     def save(self, filename) -> None:
         """save the decomposition for future use
 
@@ -342,7 +350,8 @@ class SymmetricDecomposition(MatrixDecomposition):
 
 
 class PauliDecomposition(MatrixDecomposition):
-    """A class that represents the Pauli decomposition of a matrix."""
+    """A class that represents the Pauli decomposition of a matrix.
+    Could be replaced by SparsePauliOp.from_operator(A)"""
 
     basis = "IXYZ"
 
@@ -457,6 +466,14 @@ class PauliDecomposition(MatrixDecomposition):
                 circuits.append(self._create_circuit(pauli_string))
 
         return np.array(coeffs, dtype=np.cdouble), unit_mats, circuits
+
+    def recompose(self) -> complex_array_type:
+        """Recompose the full matrix
+
+        Returns:
+            complex_array_type: recomposed matrix
+        """
+        return SparsePauliOp(self.strings, self.coefficients).to_matrix()
 
     def save(self, filename: str) -> None:
         """save the decomposition for future use
