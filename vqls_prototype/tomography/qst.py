@@ -3,9 +3,10 @@ from qiskit_experiments.library import StateTomography
 
 
 class FullQST:
-    def __init__(self, circuit, backend):
+    def __init__(self, circuit, backend, shots=1000):
         self.backend = backend
         self.circuit = circuit
+        self.shots = shots
 
     def get_relative_amplitude_sign(self, parameters):
         """_summary_
@@ -50,7 +51,7 @@ class FullQST:
             _type_: _description_
         """
         qstexp1 = StateTomography(self.circuit.bind_parameters(parameters))
-        qstdata1 = qstexp1.run(self.backend).block_for_results()
+        qstdata1 = qstexp1.run(self.backend, shots=self.shots).block_for_results()
         return qstdata1.analysis_results("state").value.data.real
 
     def get_statevector(self, parameters):
