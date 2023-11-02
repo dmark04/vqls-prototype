@@ -22,7 +22,6 @@ from vqls_prototype import VQLS, VQLSLog, Hybrid_QST_VQLS
 
 
 from vqls_prototype.hadamard_test.hadamard_test import BatchHadammardTest
-from vqls_prototype.hadamard_test.hadamard_overlap_test import BatchHadammardOverlapTest
 from vqls_prototype.hadamard_test.direct_hadamard_test import BatchDirectHadammardTest
 
 
@@ -106,9 +105,7 @@ class TestHadamard(QiskitTestCase):
         norm = BatchHadammardTest(hdmr_tests_norm).get_values(
             self.estimator, self.parameters
         )
-        norm = (
-            vqls.matrix_circuits.post_process_contracted_norm_values(norm)
-        )
+        norm = vqls.matrix_circuits.post_process_contracted_norm_values(norm)
 
         # there is sometimes an issue with complex part having a minus sign
         assert np.allclose(np.absolute(norm), np.absolute(self.norm_ref))
@@ -143,7 +140,7 @@ class TestHadamard(QiskitTestCase):
             options={"matrix_decomposition": "optimized_pauli", "shots": None},
         )
 
-        qst_vqls._init_tomography(qst_vqls.options["tomography"])
+        qst_vqls._init_tomography(qst_vqls.options["tomography"]) # pylint: disable=protected-access
 
         # compute the circuits
         hdmr_tests_norm, hdmr_tests_overlap = qst_vqls.construct_circuit(
