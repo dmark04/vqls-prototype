@@ -14,7 +14,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from vqls_prototype.matrix_decomposition import (
+from vqls_prototype.matrix_decomposition.matrix_decomposition import (
     MatrixDecomposition,
     SymmetricDecomposition,
     PauliDecomposition,

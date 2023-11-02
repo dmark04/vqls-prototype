@@ -18,16 +18,16 @@ from qiskit.test import QiskitTestCase
 
 import numpy as np
 
-from qiskit import BasicAer, QuantumCircuit
+from qiskit import BasicAer
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.utils import algorithm_globals
 
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
-from vqls_prototype import VQLS, VQLSLog
+from vqls_prototype import QST_VQLS, VQLSLog
 
 
-class TestVQLS(QiskitTestCase):
+class TestQSTVQLS(QiskitTestCase):
     """Test VQLS"""
 
     def setUp(self):
@@ -35,11 +35,7 @@ class TestVQLS(QiskitTestCase):
         self.seed = 50
         algorithm_globals.random_seed = self.seed
 
-        self.options = (
-            {"use_local_cost_function": False, "use_overlap_test": False},
-            {"use_local_cost_function": True, "use_overlap_test": False},
-            {"use_local_cost_function": False, "use_overlap_test": True},
-        )
+        self.options = ({"use_local_cost_function": False, "use_overlap_test": False},)
 
         self.estimators = (
             Estimator(),
@@ -70,7 +66,7 @@ class TestVQLS(QiskitTestCase):
 
         for estimator, sampler in zip(self.estimators, self.samplers):
             for opt in self.options:
-                vqls = VQLS(
+                vqls = QST_VQLS(
                     estimator,
                     ansatz,
                     COBYLA(maxiter=2, disp=True),
@@ -78,37 +74,6 @@ class TestVQLS(QiskitTestCase):
                     sampler=sampler,
                 )
                 _ = vqls.solve(matrix, rhs)
-
-    def test_circuit_input_statevector(self):
-        """Test the VQLS on circuits input using statevector simulator."""
-
-        num_qubits = 2
-        ansatz = RealAmplitudes(num_qubits=num_qubits, reps=3, entanglement="full")
-
-        rhs = QuantumCircuit(num_qubits)
-        rhs.h(0)
-        rhs.h(1)
-
-        qc1 = QuantumCircuit(num_qubits)
-        qc1.x(0)
-        qc1.x(1)
-        qc1.cnot(0, 1)
-
-        qc2 = QuantumCircuit(num_qubits)
-        qc2.h(0)
-        qc2.x(1)
-        qc2.cnot(0, 1)
-
-        for estimator, sampler in zip(self.estimators, self.samplers):
-            for opt in self.options:
-                vqls = VQLS(
-                    estimator,
-                    ansatz,
-                    COBYLA(maxiter=2, disp=True),
-                    sampler=sampler,
-                    options=opt,
-                )
-                _ = vqls.solve([[0.5, qc1], [0.5, qc2]], rhs)
 
 
 if __name__ == "__main__":
