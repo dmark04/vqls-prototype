@@ -1,5 +1,5 @@
 import numpy as np
-from qiskit_experiments.library import StateTomography  # pylint: disable=import-error
+from qiskit_experiments.library import StateTomography
 
 
 class FullQST:
