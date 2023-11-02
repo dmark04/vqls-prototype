@@ -418,7 +418,7 @@ class VQLS(BaseSolver):
         # and pass that to Hadammard test requiring not to apply control
 
         # precompute the controlled version of the inverse vector circuit
-        qc_u = QuantumCircuit(self.vector_circuit.num_qubits + 1)
+        qc_u = QuantumCircuit(self.vector_circuit.num_qubits + 1, name='c_U')
         qc_u.append(
             self.vector_circuit.inverse().control(1),
             list(range(self.vector_circuit.num_qubits + 1)),
