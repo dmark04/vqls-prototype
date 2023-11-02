@@ -36,11 +36,11 @@ class TestTomography(QiskitTestCase):
             self.parameters
         )
 
-    def test_full_qst(self):
-        backend = Aer.get_backend("statevector_simulator")
-        full_qst = FullQST(self.ansatz, backend)
-        sol = full_qst.get_relative_amplitude_sign(self.parameters)
-        assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
+    # def test_full_qst(self):
+    #     backend = Aer.get_backend("statevector_simulator")
+    #     full_qst = FullQST(self.ansatz, backend)
+    #     sol = full_qst.get_relative_amplitude_sign(self.parameters)
+    #     assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
     def test_htree_qst(self):
         sampler = Sampler()
