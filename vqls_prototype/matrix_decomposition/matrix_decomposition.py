@@ -95,7 +95,7 @@ class MatrixDecomposition:
                 raise ValueError(f"mismatched number of qubits: {_num_qubits}")
 
             self._matrices = [Operator(qc).data for qc in self.circuits]
-            self._matrix = self.recompose()
+            # self._matrix = self.recompose()
         else:
             raise ValueError(
                 f"inconsistent arguments: matrix={matrix}, \
@@ -211,7 +211,8 @@ class MatrixDecomposition:
         Returns:
             complex_array_type: The recomposed matrix.
         """
-        raise NotImplementedError(f"can't recompose in {self.__class__.__name__!r}")
+        coeffs, matrices = self.coefficients, self.matrices
+        return (coeffs.reshape(len(coeffs), 1, 1) * matrices).sum(axis=0)
 
     def decompose_matrix(
         self,

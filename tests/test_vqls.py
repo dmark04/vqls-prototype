@@ -37,10 +37,7 @@ class TestVQLS(QiskitTestCase):
 
         self.options = (
             {"use_local_cost_function": False, "use_overlap_test": False},
-            {
-                "use_local_cost_function": True,
-                "use_overlap_test": False,
-            },
+            {"use_local_cost_function": True,  "use_overlap_test": False},
             {"use_local_cost_function": False, "use_overlap_test": True},
         )
 
