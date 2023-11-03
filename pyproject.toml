@@ -2,9 +2,10 @@
 
 [project]
 name = "vqls_prototype"
-dynamic = [
-    "version",
-]
+version = "0.2.0"
+# dynamic = [
+#    "version",
+# ]
 readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE.txt"}
