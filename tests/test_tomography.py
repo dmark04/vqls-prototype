@@ -12,7 +12,6 @@
 
 import numpy as np
 from qiskit.test import QiskitTestCase
-from qiskit.utils import algorithm_globals
 
 from qiskit import Aer
 from qiskit.circuit.library import RealAmplitudes
@@ -24,8 +23,6 @@ from vqls_prototype.tomography import FullQST, SimulatorQST, HTreeQST, ShadowQST
 class TestTomography(QiskitTestCase):
     def setUp(self):
         super().setUp()
-        self.seed = 50
-        algorithm_globals.random_seed = self.seed
 
         # define ansatz
         num_qubits = 2
