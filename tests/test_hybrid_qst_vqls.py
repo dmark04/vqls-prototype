@@ -20,7 +20,6 @@ import numpy as np
 
 from qiskit import BasicAer
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.utils import algorithm_globals
 
 from qiskit.algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
@@ -32,8 +31,6 @@ class TestHybridQSTVQLS(QiskitTestCase):
 
     def setUp(self):
         super().setUp()
-        self.seed = 50
-        algorithm_globals.random_seed = self.seed
 
         self.options = ({"use_local_cost_function": False, "use_overlap_test": False},)
 
