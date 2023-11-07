@@ -21,6 +21,7 @@ dependencies = [
     "qiskit>=0.14.1",
     "qiskit_experiments>=0.5.3",
     "qiskit_ibm_runtime>=0.9.3",
+    "qiskit_algorithms>=0.2.1",
     "ipykernel>=6.15.0",
     "matplotlib>=3.5.3",
     "pylatexenc>=2.10",
