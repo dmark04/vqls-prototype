@@ -89,12 +89,12 @@ class TestVQLS(QiskitTestCase):
         qc1 = QuantumCircuit(num_qubits)
         qc1.x(0)
         qc1.x(1)
-        qc1.cnot(0, 1)
+        qc1.x(0, 1)
 
         qc2 = QuantumCircuit(num_qubits)
         qc2.h(0)
         qc2.x(1)
-        qc2.cnot(0, 1)
+        qc2.x(0, 1)
 
         for estimator, sampler in zip(self.estimators, self.samplers):
             for opt in self.options:
