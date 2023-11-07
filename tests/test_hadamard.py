@@ -15,7 +15,7 @@ import numpy as np
 from qiskit.test import QiskitTestCase
 
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.algorithms import optimizers as opt
+from qiskit_algorithms import optimizers as opt
 from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import VQLS, VQLSLog, Hybrid_QST_VQLS
 

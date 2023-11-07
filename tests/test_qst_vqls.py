@@ -21,7 +21,7 @@ import numpy as np
 from qiskit import BasicAer
 from qiskit.circuit.library import RealAmplitudes
 
-from qiskit.algorithms.optimizers import COBYLA
+from qiskit_algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
 from vqls_prototype import QST_VQLS, VQLSLog
 

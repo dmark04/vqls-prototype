@@ -45,7 +45,7 @@ Systems of linear equations arise naturally in many real-life applications in a 
 ```python
  from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog  
  from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes  
- from qiskit.algorithms import optimizers as opt  
+ from qiskit_algorithms import optimizers as opt  
  from qiskit import Aer, BasicAer  
  import numpy as np 
 

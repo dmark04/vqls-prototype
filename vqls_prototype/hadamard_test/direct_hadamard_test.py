@@ -1,6 +1,6 @@
 from typing import Optional, List
 from qiskit import QuantumCircuit
-from qiskit.algorithms.exceptions import AlgorithmError
+from qiskit_algorithms.exceptions import AlgorithmError
 import numpy as np
 import numpy.typing as npt
 
