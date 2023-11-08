@@ -5,7 +5,6 @@ import numpy as np
 from qiskit.circuit import QuantumCircuit
 
 
-
 def validate_initial_point(
     point: Sequence[float] | None, circuit: QuantumCircuit
 ) -> Sequence[float]:
