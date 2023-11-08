@@ -15,10 +15,7 @@ from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit import Aer
 from qiskit import QuantumCircuit
 
-from qiskit_algorithms.utils import (
-    validate_bounds,
-    validate_initial_point,
-)
+from qiskit_algorithms.utils import validate_bounds
 from qiskit.quantum_info import SparsePauliOp
 
 from .variational_linear_solver import (
@@ -39,6 +36,7 @@ from ..tomography.simulator_qst import SimulatorQST
 from ..tomography.htree_qst import HTreeQST
 from ..tomography.shadow_qst import ShadowQST
 
+from .validation import validate_initial_point
 from .base_solver import BaseSolver
 
 
