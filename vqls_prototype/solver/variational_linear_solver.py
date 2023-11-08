@@ -17,7 +17,7 @@ from typing import Union, Optional
 import numpy as np
 
 from qiskit import QuantumCircuit
-from qiskit.algorithms.variational_algorithm import VariationalResult
+from qiskit_algorithms.variational_algorithm import VariationalResult
 
 
 class VariationalLinearSolverResult(VariationalResult):

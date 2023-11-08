@@ -2,7 +2,7 @@
 
 from typing import Optional, List, Union
 from qiskit import QuantumCircuit, QuantumRegister, transpile
-from qiskit.algorithms.exceptions import AlgorithmError
+from qiskit_algorithms.exceptions import AlgorithmError
 from qiskit.opflow import TensoredOp
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np

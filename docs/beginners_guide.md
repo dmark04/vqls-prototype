@@ -50,7 +50,7 @@ import numpy as np
 from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
 from qiskit.primitives import Estimator 
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-from qiskit.algorithms import optimizers as opt
+from qiskit_algorithms import optimizers as opt
 size = 4
 
 # define the matrix of the problem

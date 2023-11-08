@@ -13,10 +13,9 @@
 import numpy as np
 
 from qiskit.test import QiskitTestCase
-from qiskit.utils import algorithm_globals
 
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.algorithms import optimizers as opt
+from qiskit_algorithms import optimizers as opt
 from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import VQLS, VQLSLog, Hybrid_QST_VQLS
 
@@ -28,8 +27,6 @@ from vqls_prototype.hadamard_test.direct_hadamard_test import BatchDirectHadamma
 class TestHadamard(QiskitTestCase):
     def setUp(self):
         super().setUp()
-        self.seed = 50
-        algorithm_globals.random_seed = self.seed
 
         # define system
         self.estimator = Estimator()

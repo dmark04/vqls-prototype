@@ -8,7 +8,7 @@
 See https://arxiv.org/abs/1909.05820
 """
 from typing import Optional, Union, List, Callable, Dict
-from qiskit.algorithms.optimizers import Minimizer, Optimizer
+from qiskit_algorithms.optimizers import Minimizer, Optimizer
 
 import numpy as np
 import sparse
@@ -17,10 +17,8 @@ from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit import Aer
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
-from qiskit.algorithms.minimum_eigen_solvers.vqe import (
-    _validate_bounds,
-    _validate_initial_point,
-)
+from qiskit_algorithms.utils import validate_bounds
+
 
 from .variational_linear_solver import (
     VariationalLinearSolverResult,
@@ -35,6 +33,7 @@ from ..tomography.simulator_qst import SimulatorQST
 from ..tomography.htree_qst import HTreeQST
 from ..tomography.shadow_qst import ShadowQST
 
+from .validation import validate_initial_point
 from .base_solver import BaseSolver
 
 
@@ -52,7 +51,7 @@ class QST_VQLS(BaseSolver):
 
             from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
             from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-            from qiskit.algorithms import optimizers as opt
+            from qiskit_algorithms import optimizers as opt
             from qiskit import Aer, BasicAer
             import numpy as np
 
@@ -486,8 +485,8 @@ class QST_VQLS(BaseSolver):
         )
 
         # set an expectation for this algorithm run (will be reset to None at the end)
-        initial_point = _validate_initial_point(self.initial_point, self.ansatz)
-        bounds = _validate_bounds(self.ansatz)
+        initial_point = validate_initial_point(self.initial_point, self.ansatz)
+        bounds = validate_bounds(self.ansatz)
 
         # Convert the gradient operator into a callable function that is compatible with the
         # optimization routine.

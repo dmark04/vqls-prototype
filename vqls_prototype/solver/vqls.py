@@ -7,18 +7,14 @@
 
 See https://arxiv.org/abs/1909.05820
 """
-
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
-from qiskit.algorithms.minimum_eigen_solvers.vqe import (
-    _validate_bounds,
-    _validate_initial_point,
-)
+from qiskit_algorithms.utils import validate_bounds
 from qiskit.quantum_info import Statevector
-from qiskit.algorithms.optimizers import Minimizer, Optimizer
+from qiskit_algorithms.optimizers import Minimizer, Optimizer
 from qiskit.opflow.gradients import GradientBase
 
 from .variational_linear_solver import (
@@ -48,7 +44,7 @@ from ..hadamard_test.direct_hadamard_test import (
     DirectHadamardTest,
     BatchDirectHadammardTest,
 )
-
+from .validation import validate_initial_point
 from .base_solver import BaseSolver
 
 
@@ -66,7 +62,7 @@ class VQLS(BaseSolver):
 
             from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
             from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
-            from qiskit.algorithms import optimizers as opt
+            from qiskit_algorithms import optimizers as opt
             from qiskit import Aer, BasicAer
             import numpy as np
 
@@ -646,9 +642,9 @@ class VQLS(BaseSolver):
             np.array([mat_i.coeff for mat_i in self.matrix_circuits])
         )
 
-        # set an expectation for this algorithm run (will be reset to None at the end)
-        initial_point = _validate_initial_point(self.initial_point, self.ansatz)
-        bounds = _validate_bounds(self.ansatz)
+        # set an expectation for this algorithm run (will be reset to None at the end
+        initial_point = validate_initial_point(self.initial_point, self.ansatz)
+        bounds = validate_bounds(self.ansatz)
 
         # Convert the gradient operator into a callable function that is compatible with the
         # optimization routine.

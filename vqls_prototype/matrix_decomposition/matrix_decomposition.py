@@ -412,7 +412,7 @@ class PauliDecomposition(MatrixDecomposition):
         # if we use the sparse decomposition
         if self.use_sparse:
             # for now convert to coo and extract indices
-            assert isinstance(self._matrix, spsp.csr_array)
+            assert isinstance(self._matrix, spsp.spmatrix)
             coo_mat = self._matrix.tocoo()
             idx_row, idx_col = coo_mat.row, coo_mat.col
 
