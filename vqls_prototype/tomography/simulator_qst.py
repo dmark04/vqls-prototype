@@ -15,7 +15,9 @@ class SimulatorQST:
             parameters (_type_): _description_
             backend (_type_): _description_
         """
-        state_vector = (Statevector(self.circuit.bind_parameters(parameters))).data.real
+        state_vector = (
+            Statevector(self.circuit.assign_parameters(parameters))
+        ).data.real
         return np.sign(state_vector)
 
     def get_statevector(self, parameters, **kwargs):  # pylint: disable=unused-argument
@@ -26,4 +28,4 @@ class SimulatorQST:
             parameters (_type_): _description_
             backend (_type_): _description_
         """
-        return (Statevector(self.circuit.bind_parameters(parameters))).data.real
+        return (Statevector(self.circuit.assign_parameters(parameters))).data.real

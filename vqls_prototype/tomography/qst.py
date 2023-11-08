@@ -50,7 +50,7 @@ class FullQST:
         Returns:
             _type_: _description_
         """
-        qstexp1 = StateTomography(self.circuit.bind_parameters(parameters))
+        qstexp1 = StateTomography(self.circuit.assign_parameters(parameters))
         qstdata1 = qstexp1.run(self.backend, shots=self.shots).block_for_results()
         return qstdata1.analysis_results("state").value.data.real
 
