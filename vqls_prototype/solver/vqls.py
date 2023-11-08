@@ -7,7 +7,6 @@
 
 See https://arxiv.org/abs/1909.05820
 """
-
 from typing import Optional, Union, List, Callable, Dict, Tuple
 import numpy as np
 

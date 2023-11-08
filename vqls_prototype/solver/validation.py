@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Union, Any
 import numpy as np
 from qiskit.circuit import QuantumCircuit
 
 
 def validate_initial_point(
-    point: Sequence[float] | None, circuit: QuantumCircuit
-) -> Sequence[float]:
+    point: Union[Sequence[float], np.ndarray] | None, circuit: QuantumCircuit
+) -> Union[Sequence[float], Any, np.ndarray[Any, Any]]:
     r"""
     Validate a choice of initial point against a choice of circuit. If no point is provided, a
     random point will be generated within certain parameter bounds. It will first look to the
@@ -41,7 +42,7 @@ def validate_initial_point(
             upper_bounds.append(upper if upper is not None else 2 * np.pi)
 
         # sample from within bounds
-        point = np.random.uniform(low=lower_bounds, high=upper_bounds)
+        point = np.random.uniform(low=lower_bounds, high=upper_bounds).tolist()
 
     elif len(point) != expected_size:
         raise ValueError(
