@@ -17,7 +17,6 @@ class BatchHadammardOverlapTest:
             hdrm_list (List): A list of DirectHadamardTest instances
         """
         self.hdmr_list = hdmr_list
-        # self.circuits = [hdmr.circuits for hdmr in hdmr_list]
         self.circuits = [c for hdmr in hdmr_list for c in hdmr.circuits]
         self.post_processing = hdmr_list[0].post_processing
         self.shots = hdmr_list[0].shots

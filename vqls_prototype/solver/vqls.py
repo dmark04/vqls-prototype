@@ -13,7 +13,7 @@ import numpy as np
 
 from qiskit import QuantumCircuit
 from qiskit.primitives import BaseEstimator, BaseSampler
-from qiskit_algorithms.utils import validate_bounds, validate_initial_point
+from qiskit_algorithms.utils import validate_bounds
 from qiskit.quantum_info import Statevector
 from qiskit_algorithms.optimizers import Minimizer, Optimizer
 from qiskit.opflow.gradients import GradientBase
@@ -45,7 +45,7 @@ from ..hadamard_test.direct_hadamard_test import (
     DirectHadamardTest,
     BatchDirectHadammardTest,
 )
-
+from .validation import validate_initial_point
 from .base_solver import BaseSolver
 
 
@@ -643,7 +643,7 @@ class VQLS(BaseSolver):
             np.array([mat_i.coeff for mat_i in self.matrix_circuits])
         )
 
-        # set an expectation for this algorithm run (will be reset to None at the end)
+        # set an expectation for this algorithm run (will be reset to None at the end
         initial_point = validate_initial_point(self.initial_point, self.ansatz)
         bounds = validate_bounds(self.ansatz)
 
