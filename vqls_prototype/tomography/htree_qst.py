@@ -136,7 +136,7 @@ class HTreeQST:
         """Sample the circuit
 
         Args:
-            parameters (np.array): values of the variational parameters of the circuit 
+            parameters (np.array): values of the variational parameters of the circuit
         """
         results = (
             self.sampler.run(self.list_circuits, [parameters] * self.ncircuits)
@@ -194,7 +194,7 @@ class HTreeQST:
         """Get the relative amplitude of each components relative to the root
 
         Args:
-            parameters (np.array): values of the variational parameters of the circuit 
+            parameters (np.array): values of the variational parameters of the circuit
         """
         samples = self.get_samples(parameters)
         weights = self.get_weight(samples)
@@ -207,8 +207,8 @@ class HTreeQST:
             parameters (np.array): values of the variational parameters of the circuit
         """
         samples = self.get_samples(parameters)
-        if np.any(samples[0]<0):
-            print('Warning : Negative sampling values found in HTree')
+        if np.any(samples[0] < 0):
+            print("Warning : Negative sampling values found in HTree")
             amplitudes = np.sqrt(np.abs(samples[0]))
         else:
             amplitudes = np.sqrt(samples[0])
