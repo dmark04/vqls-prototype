@@ -45,10 +45,10 @@ class HTreeQST:
         """Compute the tree"""
 
         def init_tree():
-            """_summary_
+            """initialize the tree
 
             Returns:
-                _type_: _description_
+                tree: tree
             """
             trees = []
             level_root, level_leaf = [], []
@@ -64,10 +64,10 @@ class HTreeQST:
             return trees, level_root, level_leaf
 
         def link_trees(trees):
-            """_summary_
+            """link multiple tress
 
             Args:
-                trees (_type_): _description_
+                trees (list): list of trees
             """
             ntree = len(trees)
             level_root, level_leaf = [], []
@@ -95,7 +95,7 @@ class HTreeQST:
         return tree
 
     def get_path(self):
-        """_summary_"""
+        """Create the paths between the root and all the leaves"""
         paths = []
         for inode in range(self.size):
             paths.append(list(self.tree.rsearch(inode)))
@@ -105,7 +105,7 @@ class HTreeQST:
         """transforms the path into a sparse matrix
 
         Returns:
-            _type_: _description_
+            coo matrix: sparse matrix of the path
         """
         row_idx, col_idx, vals = [], [], []
         for ip, path in enumerate(self.path_to_node):
@@ -118,10 +118,10 @@ class HTreeQST:
         )
 
     def get_circuits(self):
-        """_summary_
+        """Create the circuits containing a single H on a given qubit after the circuit
 
         Args:
-            circuits (_type_): _description_
+            circuits (list): List of circuits
         """
         list_circuits = [self.circuit.measure_all(inplace=False)]
 
@@ -133,10 +133,10 @@ class HTreeQST:
         return list_circuits
 
     def get_samples(self, parameters):
-        """_summary_
+        """Sample the circuit
 
         Args:
-            sampler (_type_): _description_
+            parameters (np.array): values of the variational parameters of the circuit 
         """
         results = (
             self.sampler.run(self.list_circuits, [parameters] * self.ncircuits)
@@ -152,10 +152,10 @@ class HTreeQST:
         return samples
 
     def get_weight(self, samples):
-        """_summary_
+        """Get the relative sign between parent/child node
 
         Args:
-            samples (_type_): _description_
+            samples (list): lit of samples of circuits
         """
         # root
         weights = np.zeros_like(samples[0])
@@ -173,10 +173,10 @@ class HTreeQST:
         return weights
 
     def get_signs(self, weights):
-        """Agregate the signs of the statevector
+        """Compute the signs of each components
 
         Args:
-            weights (np.array):
+            weights (np.array): relative sign between parent/child in the tree
         """
 
         # if the path is not known
@@ -191,23 +191,27 @@ class HTreeQST:
         return np.multiply.reduceat(mat.data, self.idx_path_matrix[:-1])
 
     def get_relative_amplitude_sign(self, parameters):
-        """_summary_
+        """Get the relative amplitude of each components relative to the root
 
         Args:
-            parameters (_type_): _description_
+            parameters (np.array): values of the variational parameters of the circuit 
         """
         samples = self.get_samples(parameters)
         weights = self.get_weight(samples)
         return self.get_signs(weights)
 
     def get_statevector(self, parameters):
-        """_summary_
+        """Get the statevector of the circuit
 
         Args:
-            parameters (_type_): _description_
+            parameters (np.array): values of the variational parameters of the circuit
         """
         samples = self.get_samples(parameters)
-        amplitudes = np.sqrt(samples[0])
+        if np.any(samples[0]<0):
+            print('Warning : Negative sampling values found in HTree')
+            amplitudes = np.sqrt(np.abs(samples[0]))
+        else:
+            amplitudes = np.sqrt(samples[0])
         weights = self.get_weight(samples)
         signs = self.get_signs(weights)
         return amplitudes * signs
