@@ -208,6 +208,9 @@ class VQLS(BaseSolver):
             # ensure the vector is double
             vector = vector.astype("float64")
 
+            if vector.ndim == 2:
+                vector = vector.flatten()
+
             # create the circuit
             nqbit = int(np.log2(len(vector)))
             self.vector_circuit = QuantumCircuit(nqbit, name="Ub")
