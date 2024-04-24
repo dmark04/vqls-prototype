@@ -13,7 +13,7 @@
 import numpy as np
 from qiskit.test import QiskitTestCase
 
-from qiskit import Aer
+from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.primitives import Sampler
 

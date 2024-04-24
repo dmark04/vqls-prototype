@@ -12,7 +12,7 @@ from qiskit_algorithms.optimizers import Minimizer, Optimizer
 
 import numpy as np
 import sparse
-from qiskit.opflow.gradients import GradientBase
+from qiskit_algorithms.gradients import BaseEstimatorGradient
 from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit import Aer
 from qiskit import QuantumCircuit
@@ -119,7 +119,7 @@ class QST_VQLS(BaseSolver):
         optimizer: Union[Optimizer, Minimizer],
         sampler: Union[BaseSampler, None],
         initial_point: Optional[Union[np.ndarray, None]] = None,
-        gradient: Optional[Union[GradientBase, Callable, None]] = None,
+        gradient: Optional[Union[BaseEstimatorGradient, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
         options: Optional[Union[Dict, None]] = None,
     ) -> None:

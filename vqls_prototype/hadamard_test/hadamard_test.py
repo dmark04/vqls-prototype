@@ -1,9 +1,9 @@
 """Hadammard test."""
 
 from typing import Optional, List, Union
-from qiskit import QuantumCircuit, QuantumRegister, transpile
+from qiskit import QuantumCircuit
 from qiskit_algorithms.exceptions import AlgorithmError
-from qiskit.opflow import TensoredOp
+from qiskit.quantum_info import Operator 
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
@@ -212,7 +212,7 @@ class HadammardTest:
 
         return circuits
 
-    def _build_observable(self) -> List[TensoredOp]:
+    def _build_observable(self) -> List[Operator]:
         """Create the operator to measure |1> on the control qubit.
 
         Returns:
