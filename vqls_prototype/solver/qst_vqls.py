@@ -14,7 +14,7 @@ import numpy as np
 import sparse
 from qiskit_algorithms.gradients import BaseEstimatorGradient
 from qiskit.primitives import BaseEstimator, BaseSampler
-from qiskit import Aer
+from qiskit_aer import Aer
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_algorithms.utils import validate_bounds
@@ -52,7 +52,7 @@ class QST_VQLS(BaseSolver):
             from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
             from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
             from qiskit_algorithms import optimizers as opt
-            from qiskit import Aer, BasicAer
+            from qiskit_aer import Aer, BasicAer
             import numpy as np
 
             from qiskit.quantum_info import Statevector
