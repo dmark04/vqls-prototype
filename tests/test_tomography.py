@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 import numpy as np
-from qiskit.test import QiskitTestCase
+from .utils.base import QiskitTestCase
 
 from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes

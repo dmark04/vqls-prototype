@@ -14,15 +14,17 @@
 
 
 import unittest
-from qiskit.test import QiskitTestCase
+from .utils.base import QiskitTestCase
 
 import numpy as np
 
-from qiskit import BasicAer, QuantumCircuit
+from qiskit_aer.primitives import Estimator as AerEstimator
+from qiskit_aer.primitives import Sampler as AerSampler
+from qiskit import QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import ADAM
-from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
+from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import VQLS
 
 # 8-11-2023
@@ -44,12 +46,12 @@ class TestVQLS(QiskitTestCase):
 
         self.estimators = (
             Estimator(),
-            BackendEstimator(BasicAer.get_backend("qasm_simulator")),
+            AerEstimator(),
         )
 
         self.samplers = (
             Sampler(),
-            BackendSampler(BasicAer.get_backend("qasm_simulator")),
+            AerSampler(),
         )
 
     def test_numpy_input(self):

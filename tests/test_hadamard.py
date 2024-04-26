@@ -12,7 +12,7 @@
 
 import numpy as np
 
-from qiskit.test import QiskitTestCase
+from .utils.base import QiskitTestCase
 
 from qiskit.circuit.library import RealAmplitudes
 from qiskit_algorithms import optimizers as opt
