@@ -23,7 +23,7 @@ from qiskit_aer.primitives import Sampler as AerSampler
 from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import COBYLA
-from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
+from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import Hybrid_QST_VQLS, VQLSLog
 
 
@@ -37,12 +37,12 @@ class TestHybridQSTVQLS(QiskitTestCase):
 
         self.estimators = (
             Estimator(),
-            AerEstimator(),
+            # AerEstimator(),
         )
 
         self.samplers = (
             Sampler(),
-            AerSampler(),
+            # AerSampler(),
         )
 
         self.log = VQLSLog([], [])

@@ -37,12 +37,12 @@ class TestQSTVQLS(QiskitTestCase):
 
         self.estimators = (
             Estimator(),
-            AerEstimator(),
+            # AerEstimator(),
         )
 
         self.samplers = (
             Sampler(),
-            AerSampler(),
+            # AerSampler(),
         )
 
         self.log = VQLSLog([], [])

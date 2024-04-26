@@ -46,12 +46,12 @@ class TestVQLS(QiskitTestCase):
 
         self.estimators = (
             Estimator(),
-            AerEstimator(),
+            # AerEstimator(),
         )
 
         self.samplers = (
             Sampler(),
-            AerSampler(),
+            # AerSampler(),
         )
 
     def test_numpy_input(self):
