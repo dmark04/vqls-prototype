@@ -14,19 +14,16 @@
 
 
 import unittest
-from qiskit.test import QiskitTestCase
 
 import numpy as np
-
-from qiskit import BasicAer
 from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import COBYLA
-from qiskit.primitives import Estimator, Sampler, BackendEstimator, BackendSampler
+from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import QST_VQLS, VQLSLog
 
 
-class TestQSTVQLS(QiskitTestCase):
+class TestQSTVQLS(unittest.TestCase):
     """Test VQLS"""
 
     def setUp(self):
@@ -36,12 +33,12 @@ class TestQSTVQLS(QiskitTestCase):
 
         self.estimators = (
             Estimator(),
-            BackendEstimator(BasicAer.get_backend("qasm_simulator")),
+            # AerEstimator(),
         )
 
         self.samplers = (
             Sampler(),
-            BackendSampler(BasicAer.get_backend("qasm_simulator")),
+            # AerSampler(),
         )
 
         self.log = VQLSLog([], [])

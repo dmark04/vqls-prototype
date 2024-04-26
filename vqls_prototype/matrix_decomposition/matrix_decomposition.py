@@ -1,4 +1,5 @@
 """Methods to decompose a matrix into quantum circuits"""
+
 from itertools import chain, combinations
 from collections import namedtuple
 from itertools import product

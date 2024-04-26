@@ -1,8 +1,6 @@
-from typing import Optional, List, Union
-from qiskit import QuantumCircuit, QuantumRegister, transpile
+from typing import Optional, List
+from qiskit import QuantumCircuit, QuantumRegister
 from qiskit_algorithms.exceptions import AlgorithmError
-from qiskit.opflow import TensoredOp
-from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 

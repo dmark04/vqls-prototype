@@ -10,17 +10,18 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+import unittest
 import numpy as np
-from qiskit.test import QiskitTestCase
 
-from qiskit import Aer
+
+from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.primitives import Sampler
 
 from vqls_prototype.tomography import FullQST, SimulatorQST, HTreeQST, ShadowQST
 
 
-class TestTomography(QiskitTestCase):
+class TestTomography(unittest.TestCase):
     def setUp(self):
         super().setUp()
 

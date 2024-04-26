@@ -15,7 +15,7 @@ from qiskit.primitives import BaseEstimator, BaseSampler
 from qiskit_algorithms.utils import validate_bounds
 from qiskit.quantum_info import Statevector
 from qiskit_algorithms.optimizers import Minimizer, Optimizer
-from qiskit.opflow.gradients import GradientBase
+from qiskit_algorithms.gradients import BaseEstimatorGradient
 
 from .variational_linear_solver import (
     VariationalLinearSolverResult,
@@ -63,7 +63,7 @@ class VQLS(BaseSolver):
             from qalcore.qiskit.vqls.vqls import VQLS, VQLSLog
             from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
             from qiskit_algorithms import optimizers as opt
-            from qiskit import Aer, BasicAer
+            from qiskit_aer import Aer, BasicAer
             import numpy as np
 
             from qiskit.quantum_info import Statevector
@@ -130,7 +130,7 @@ class VQLS(BaseSolver):
         optimizer: Union[Optimizer, Minimizer],
         sampler: Optional[Union[BaseSampler, None]] = None,
         initial_point: Optional[Union[np.ndarray, None]] = None,
-        gradient: Optional[Union[GradientBase, Callable, None]] = None,
+        gradient: Optional[Union[BaseEstimatorGradient, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,
         options: Optional[Union[Dict, None]] = None,
     ) -> None:

@@ -1,4 +1,5 @@
 """Methods to decompose a matrix into quantum circuits"""
+
 import itertools
 from dataclasses import dataclass
 from collections import OrderedDict

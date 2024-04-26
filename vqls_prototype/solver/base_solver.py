@@ -11,7 +11,7 @@ from qiskit_algorithms.variational_algorithm import VariationalAlgorithm
 from qiskit_algorithms.utils.validation import validate_min
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
 from qiskit_algorithms.optimizers import Minimizer, Optimizer
-from qiskit.opflow.gradients import GradientBase
+from qiskit_algorithms.gradients import BaseEstimatorGradient
 
 from .variational_linear_solver import (
     VariationalLinearSolver,
@@ -45,7 +45,7 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
         optimizer: Union[Optimizer, Minimizer],
         sampler: Union[BaseSampler, None],
         initial_point: Union[np.ndarray, None],
-        gradient: Union[GradientBase, Callable, None],
+        gradient: Union[BaseEstimatorGradient, Callable, None],
         max_evals_grouped: int,
     ) -> None:
         r"""
