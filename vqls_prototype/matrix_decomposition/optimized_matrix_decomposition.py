@@ -119,9 +119,9 @@ class ContractedPauliDecomposition(PauliDecomposition):
                             self._create_circuit(contracted_pauli_string)
                         )
                     self.contraction_index_mapping.append(number_existing_circuits)
-                    index_contracted_pauli[contracted_pauli_string] = (
-                        number_existing_circuits
-                    )
+                    index_contracted_pauli[
+                        contracted_pauli_string
+                    ] = number_existing_circuits
                     number_existing_circuits += 1
 
                 # otherwise find reference of existing circuit
