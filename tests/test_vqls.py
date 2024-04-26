@@ -14,7 +14,6 @@
 
 
 import unittest
-from .utils.base import QiskitTestCase
 
 import numpy as np
 
@@ -32,7 +31,7 @@ from vqls_prototype import VQLS
 # this test case is skipped for now
 
 
-class TestVQLS(QiskitTestCase):
+class TestVQLS(unittest.TestCase):
     """Test VQLS"""
 
     def setUp(self):

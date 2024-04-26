@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 import numpy as np
-from .utils.base import QiskitTestCase
+import unittest
 
 from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes
@@ -20,7 +20,7 @@ from qiskit.primitives import Sampler
 from vqls_prototype.tomography import FullQST, SimulatorQST, HTreeQST, ShadowQST
 
 
-class TestTomography(QiskitTestCase):
+class TestTomography(unittest.TestCase):
     def setUp(self):
         super().setUp()
 

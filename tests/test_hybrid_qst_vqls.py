@@ -14,7 +14,6 @@
 
 
 import unittest
-from .utils.base import QiskitTestCase
 
 import numpy as np
 
@@ -27,7 +26,7 @@ from qiskit.primitives import Estimator, Sampler
 from vqls_prototype import Hybrid_QST_VQLS, VQLSLog
 
 
-class TestHybridQSTVQLS(QiskitTestCase):
+class TestHybridQSTVQLS(unittest.TestCase):
     """Test VQLS"""
 
     def setUp(self):

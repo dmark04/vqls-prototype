@@ -12,7 +12,7 @@
 
 import numpy as np
 
-from .utils.base import QiskitTestCase
+import unittest
 
 from qiskit.circuit.library import RealAmplitudes
 from qiskit_algorithms import optimizers as opt
@@ -24,7 +24,7 @@ from vqls_prototype.hadamard_test.hadamard_test import BatchHadammardTest
 from vqls_prototype.hadamard_test.direct_hadamard_test import BatchDirectHadammardTest
 
 
-class TestHadamard(QiskitTestCase):
+class TestHadamard(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
