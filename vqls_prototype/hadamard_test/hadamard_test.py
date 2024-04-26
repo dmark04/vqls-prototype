@@ -3,7 +3,7 @@
 from typing import Optional, List, Union
 from qiskit import QuantumCircuit
 from qiskit_algorithms.exceptions import AlgorithmError
-from qiskit.quantum_info import Operator 
+from qiskit.quantum_info import Operator
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
