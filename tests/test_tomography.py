@@ -10,8 +10,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import numpy as np
 import unittest
+import numpy as np
+
 
 from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes

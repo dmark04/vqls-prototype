@@ -17,8 +17,6 @@ import unittest
 
 import numpy as np
 
-from qiskit_aer.primitives import Estimator as AerEstimator
-from qiskit_aer.primitives import Sampler as AerSampler
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
 

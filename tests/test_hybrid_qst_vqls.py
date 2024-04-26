@@ -16,9 +16,6 @@
 import unittest
 
 import numpy as np
-
-from qiskit_aer.primitives import Estimator as AerEstimator
-from qiskit_aer.primitives import Sampler as AerSampler
 from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import COBYLA
