@@ -226,7 +226,9 @@ class MatrixDecomposition:
         Args:
             new_matrix (npt.ArrayLike): new input matrix
         """
-        self.__init__(new_matrix)
+        self.sparse_matrix = spsp.issparse(new_matrix)
+        self._matrix, self.num_qubits = self._validate_matrix(new_matrix)
+        self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
 
     def save(self, filename) -> None:
         """save the decomposition for future use
