@@ -259,8 +259,8 @@ class VQLS(BaseSolver):
                 self.matrix_circuits = decomposition(matrix=matrix)
 
             # a pregenerated decomposition
-            if isinstance(matrix, [v for _, v in self.supported_decomposition.items()]):
-                self.matrix_circuits = matrix
+            if isinstance(matrix, [v for _, v in self.supported_decomposition.items()]):  # type: ignore[arg-type]
+                self.matrix_circuits = matrix  # type: ignore[assignment]
 
             # a single circuit
             elif isinstance(matrix, QuantumCircuit):

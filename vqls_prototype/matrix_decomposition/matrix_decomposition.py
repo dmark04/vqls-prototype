@@ -220,11 +220,11 @@ class MatrixDecomposition:
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
 
-    def update_matrix(self, new_matrix: npt.ArrayLike) -> None:
+    def update_matrix(self, new_matrix: npt.NDArray) -> None:
         """Update the decomposition with a new matrix
 
         Args:
-            new_matrix (npt.ArrayLike): new input matrix
+            new_matrix (npt.NDArray): new input matrix
         """
         self.sparse_matrix = spsp.issparse(new_matrix)
         self._matrix, self.num_qubits = self._validate_matrix(new_matrix)
