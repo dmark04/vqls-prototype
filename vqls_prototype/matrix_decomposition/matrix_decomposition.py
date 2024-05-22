@@ -478,7 +478,7 @@ class PauliDecomposition(MatrixDecomposition):
         """
         prefactor = 1.0 / (2**self.num_qubits)
         coeffs = []
-        for pauli_string in self.strings:
+        for pauli_string in tqdm(self.strings):
             coef = self._get_pauli_coefficient(
                 new_matrix, pauli_string, self.sparse_matrix
             )
