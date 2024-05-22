@@ -179,6 +179,13 @@ class VQLS(BaseSolver):
         }
         self.options = self._validate_solve_options(options)
 
+        self.supported_decomposition = {
+            "pauli": PauliDecomposition,
+            "contracted_pauli": ContractedPauliDecomposition,
+            "optimized_pauli": OptimizedPauliDecomposition,
+            "symmetric": SymmetricDecomposition,
+        }
+
     def construct_circuit(  # pylint: disable=too-many-branches
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
@@ -224,13 +231,16 @@ class VQLS(BaseSolver):
         else:
             raise ValueError("Format of the input vector not recognized")
 
-        # general numpy matrix
+        # Reuse the matrix if we reinit with a different rhs
         if (self.options["reuse_matrix"] is True) and (
             self.matrix_circuits is not None
         ):
             print("\t VQLS : Reusing matrix decomposition for new RHS")
 
+        # recreate a decomposition for the matrix
         else:
+
+            # general np array
             if isinstance(matrix, np.ndarray):
                 # ensure the matrix is double
                 matrix = matrix.astype("float64")
@@ -243,13 +253,14 @@ class VQLS(BaseSolver):
                         + ". Matrix dimension: "
                         + str(matrix.shape[0])
                     )
-                decomposition = {
-                    "pauli": PauliDecomposition,
-                    "contracted_pauli": ContractedPauliDecomposition,
-                    "optimized_pauli": OptimizedPauliDecomposition,
-                    "symmetric": SymmetricDecomposition,
-                }[self.options["matrix_decomposition"]]
+                decomposition = self.supported_decomposition[
+                    self.options["matrix_decomposition"]
+                ]
                 self.matrix_circuits = decomposition(matrix=matrix)
+
+            # a pregenerated decomposition
+            if isinstance(matrix, [v for _, v in self.supported_decomposition.items()]):
+                self.matrix_circuits = matrix
 
             # a single circuit
             elif isinstance(matrix, QuantumCircuit):
