@@ -459,17 +459,9 @@ class PauliDecomposition(MatrixDecomposition):
         possible_pauli_strings = self.get_possible_pauli_strings()
         for pauli_gates in tqdm(possible_pauli_strings):
             pauli_string = "".join(pauli_gates)
-            pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
-            # pauli_matrix = pauli_op.to_matrix()
-            # coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
-            # coef: complex_array_type = np.trace(np.dot(pauli_op, self.matrix))
-            if self.sparse_matrix:
-                coef: complex_array_type = (
-                    pauli_op.to_matrix(sparse=True) @ self.matrix
-                ).trace()
-            else:
-                coef: complex_array_type = np.einsum("ij,ji", pauli_op, self.matrix)  # type: ignore
-
+            coef: complex_array_type = self._get_pauli_coefficient(
+                self.matrix, pauli_string, self.sparse_matrix
+            )
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
@@ -498,7 +490,7 @@ class PauliDecomposition(MatrixDecomposition):
     @staticmethod
     def _get_pauli_coefficient(
         matrix: npt.ArrayLike, pauli_string: str, sparse_matrix: bool
-    ) -> complex_type:
+    ) -> complex_array_type:
         """Compute the pauli coefficient of a given pauli string
 
         Args:
@@ -507,7 +499,7 @@ class PauliDecomposition(MatrixDecomposition):
             sparse_matrix (bool): if the matrix is sparse or not
 
         Returns:
-            complex_type: pauli coefficient
+            complex_array_type: pauli coefficient
         """
         pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
         if sparse_matrix:
