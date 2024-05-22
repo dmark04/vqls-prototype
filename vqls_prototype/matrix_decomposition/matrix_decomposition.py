@@ -220,6 +220,14 @@ class MatrixDecomposition:
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
 
+    def update_matrix(self, new_matrix: npt.ArrayLike) -> None:
+        """Update the decomposition with a new matrix
+
+        Args:
+            new_matrix (npt.ArrayLike): new input matrix
+        """
+        self.__init__(new_matrix)
+
     def save(self, filename) -> None:
         """save the decomposition for future use
 
@@ -468,6 +476,45 @@ class PauliDecomposition(MatrixDecomposition):
                 circuits.append(self._create_circuit(pauli_string))
 
         return np.array(coeffs, dtype=np.cdouble), unit_mats, circuits
+
+    def update_matrix(self, new_matrix: npt.NDArray) -> None:
+        """Update the coefficients using a new matrix
+
+        Args:
+            new_matrix (npt.NDArray): new input matrix
+
+        """
+        prefactor = 1.0 / (2**self.num_qubits)
+        coeffs = []
+        for pauli_string in self.strings:
+            coef = self._get_pauli_coefficient(
+                new_matrix, pauli_string, self.sparse_matrix
+            )
+            coeffs.append(prefactor * coef)
+
+        self._matrix = new_matrix
+        self.coefficients = np.array(coeffs, dtype=np.cdouble)
+
+    @staticmethod
+    def _get_pauli_coefficient(
+        matrix: npt.ArrayLike, pauli_string: str, sparse_matrix: bool
+    ) -> complex_type:
+        """Compute the pauli coefficient of a given pauli string
+
+        Args:
+            matrix (npt.ArrayLike): input matrix
+            pauli_string (str): a given pauli string
+            sparse_matrix (bool): if the matrix is sparse or not
+
+        Returns:
+            complex_type: pauli coefficient
+        """
+        pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
+        if sparse_matrix:
+            coef = (pauli_op.to_matrix(sparse=True) @ matrix).trace()
+        else:
+            coef = np.einsum("ij,ji", pauli_op, matrix)  # type: ignore
+        return coef
 
     def recompose(self) -> complex_array_type:
         """Recompose the full matrix
