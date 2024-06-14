@@ -259,7 +259,7 @@ class VQLS(BaseSolver):
                 self.matrix_circuits = decomposition(matrix=matrix)
 
             # a pregenerated decomposition
-            if isinstance(matrix, (v for _, v in self.supported_decomposition.items())):  # type: ignore[arg-type]
+            elif isinstance(matrix, tuple(v for _, v in self.supported_decomposition.items())):  # type: ignore[arg-type]
                 self.matrix_circuits = matrix  # type: ignore[assignment]
 
             # a single circuit
@@ -279,7 +279,9 @@ class VQLS(BaseSolver):
                 )
 
             else:
-                raise ValueError("Format of the input matrix not recognized")
+                raise ValueError(
+                    "Format of the input matrix not recognized", type(matrix)
+                )
 
         # create only the circuit for <psi|psi> =  <0|V A_n ^* A_m V|0>
         # with n != m as the diagonal terms (n==m) always give a proba of 1.0
