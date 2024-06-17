@@ -186,6 +186,10 @@ class VQLS(BaseSolver):
             "symmetric": SymmetricDecomposition,
         }
 
+        self.supported_decomposition_list = tuple(
+            v for _, v in self.supported_decomposition.items()
+        )
+
     def construct_circuit(  # pylint: disable=too-many-branches
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
@@ -259,7 +263,7 @@ class VQLS(BaseSolver):
                 self.matrix_circuits = decomposition(matrix=matrix)
 
             # a pregenerated decomposition
-            elif isinstance(matrix, tuple(v for _, v in self.supported_decomposition.items())):  # type: ignore[arg-type]
+            elif isinstance(matrix, self.supported_decomposition_list):  # type: ignore[arg-type]
                 self.matrix_circuits = matrix  # type: ignore[assignment]
 
             # a single circuit
