@@ -220,6 +220,16 @@ class MatrixDecomposition:
     ) -> Tuple[complex_array_type, List[complex_array_type], List[QuantumCircuit]]:
         raise NotImplementedError(f"can't decompose in {self.__class__.__name__!r}")
 
+    def update_matrix(self, new_matrix: npt.NDArray) -> None:
+        """Update the decomposition with a new matrix
+
+        Args:
+            new_matrix (npt.NDArray): new input matrix
+        """
+        self.sparse_matrix = spsp.issparse(new_matrix)
+        self._matrix, self.num_qubits = self._validate_matrix(new_matrix)
+        self._coefficients, self._matrices, self._circuits = self.decompose_matrix()
+
     def save(self, filename) -> None:
         """save the decomposition for future use
 
@@ -451,23 +461,54 @@ class PauliDecomposition(MatrixDecomposition):
         possible_pauli_strings = self.get_possible_pauli_strings()
         for pauli_gates in tqdm(possible_pauli_strings):
             pauli_string = "".join(pauli_gates)
-            pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
-            # pauli_matrix = pauli_op.to_matrix()
-            # coef: complex_array_type = np.trace(pauli_matrix @ self.matrix)
-            # coef: complex_array_type = np.trace(np.dot(pauli_op, self.matrix))
-            if self.sparse_matrix:
-                coef: complex_array_type = (
-                    pauli_op.to_matrix(sparse=True) @ self.matrix
-                ).trace()
-            else:
-                coef: complex_array_type = np.einsum("ij,ji", pauli_op, self.matrix)  # type: ignore
-
+            coef: complex_array_type = self._get_pauli_coefficient(
+                self.matrix, pauli_string, self.sparse_matrix
+            )
             if coef * np.conj(coef) != 0:
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
                 circuits.append(self._create_circuit(pauli_string))
 
         return np.array(coeffs, dtype=np.cdouble), unit_mats, circuits
+
+    def update_matrix(self, new_matrix: npt.NDArray) -> None:
+        """Update the coefficients using a new matrix
+
+        Args:
+            new_matrix (npt.NDArray): new input matrix
+
+        """
+        prefactor = 1.0 / (2**self.num_qubits)
+        coeffs = []
+        for pauli_string in tqdm(self.strings):
+            coef = self._get_pauli_coefficient(
+                new_matrix, pauli_string, self.sparse_matrix
+            )
+            coeffs.append(prefactor * coef)
+
+        self._matrix = new_matrix
+        self.coefficients = np.array(coeffs, dtype=np.cdouble)
+
+    @staticmethod
+    def _get_pauli_coefficient(
+        matrix: npt.ArrayLike, pauli_string: str, sparse_matrix: bool
+    ) -> complex_array_type:
+        """Compute the pauli coefficient of a given pauli string
+
+        Args:
+            matrix (npt.ArrayLike): input matrix
+            pauli_string (str): a given pauli string
+            sparse_matrix (bool): if the matrix is sparse or not
+
+        Returns:
+            complex_array_type: pauli coefficient
+        """
+        pauli_op = SparsePauliOp(pauli_string)  # Pauli(pauli_string)
+        if sparse_matrix:
+            coef = (pauli_op.to_matrix(sparse=True) @ matrix).trace()
+        else:
+            coef = np.einsum("ij,ji", pauli_op, matrix)  # type: ignore
+        return coef
 
     def recompose(self) -> complex_array_type:
         """Recompose the full matrix

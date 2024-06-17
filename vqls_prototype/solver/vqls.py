@@ -179,6 +179,17 @@ class VQLS(BaseSolver):
         }
         self.options = self._validate_solve_options(options)
 
+        self.supported_decomposition = {
+            "pauli": PauliDecomposition,
+            "contracted_pauli": ContractedPauliDecomposition,
+            "optimized_pauli": OptimizedPauliDecomposition,
+            "symmetric": SymmetricDecomposition,
+        }
+
+        self.supported_decomposition_list = tuple(
+            v for _, v in self.supported_decomposition.items()
+        )
+
     def construct_circuit(  # pylint: disable=too-many-branches
         self,
         matrix: Union[np.ndarray, QuantumCircuit, List],
@@ -224,13 +235,16 @@ class VQLS(BaseSolver):
         else:
             raise ValueError("Format of the input vector not recognized")
 
-        # general numpy matrix
+        # Reuse the matrix if we reinit with a different rhs
         if (self.options["reuse_matrix"] is True) and (
             self.matrix_circuits is not None
         ):
             print("\t VQLS : Reusing matrix decomposition for new RHS")
 
+        # recreate a decomposition for the matrix
         else:
+
+            # general np array
             if isinstance(matrix, np.ndarray):
                 # ensure the matrix is double
                 matrix = matrix.astype("float64")
@@ -243,13 +257,14 @@ class VQLS(BaseSolver):
                         + ". Matrix dimension: "
                         + str(matrix.shape[0])
                     )
-                decomposition = {
-                    "pauli": PauliDecomposition,
-                    "contracted_pauli": ContractedPauliDecomposition,
-                    "optimized_pauli": OptimizedPauliDecomposition,
-                    "symmetric": SymmetricDecomposition,
-                }[self.options["matrix_decomposition"]]
+                decomposition = self.supported_decomposition[
+                    self.options["matrix_decomposition"]
+                ]
                 self.matrix_circuits = decomposition(matrix=matrix)
+
+            # a pregenerated decomposition
+            elif isinstance(matrix, self.supported_decomposition_list):
+                self.matrix_circuits = matrix  # type: ignore[assignment]
 
             # a single circuit
             elif isinstance(matrix, QuantumCircuit):
@@ -268,7 +283,9 @@ class VQLS(BaseSolver):
                 )
 
             else:
-                raise ValueError("Format of the input matrix not recognized")
+                raise ValueError(
+                    "Format of the input matrix not recognized", type(matrix)
+                )
 
         # create only the circuit for <psi|psi> =  <0|V A_n ^* A_m V|0>
         # with n != m as the diagonal terms (n==m) always give a proba of 1.0
