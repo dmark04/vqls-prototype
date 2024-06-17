@@ -263,7 +263,7 @@ class VQLS(BaseSolver):
                 self.matrix_circuits = decomposition(matrix=matrix)
 
             # a pregenerated decomposition
-            elif isinstance(matrix, self.supported_decomposition_list):  # type: ignore[arg-type]
+            elif isinstance(matrix, self.supported_decomposition_list):
                 self.matrix_circuits = matrix  # type: ignore[assignment]
 
             # a single circuit
