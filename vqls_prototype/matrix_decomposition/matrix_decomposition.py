@@ -464,7 +464,7 @@ class PauliDecomposition(MatrixDecomposition):
             coef: complex_array_type = self._get_pauli_coefficient(
                 self.matrix, pauli_string, self.sparse_matrix
             )
-            if np.isclose(coef * np.conj(coef), 0):
+            if not np.isclose(coef * np.conj(coef), 0):
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
                 circuits.append(self._create_circuit(pauli_string))
