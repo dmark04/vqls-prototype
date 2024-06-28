@@ -376,7 +376,6 @@ class PauliDecomposition(MatrixDecomposition):
         ] = None,
         load: Optional[str] = None,
         sparse: Optional[bool] = False,
-        threshold: float = 1e-6,
     ):
         """Decompose a matrix representing quantum circuits
 
@@ -391,10 +390,8 @@ class PauliDecomposition(MatrixDecomposition):
                 valid only for a circuit with 1 element. Defaults to None.
             load (Optional[str]): filename to load the decomposition from
             sparse (optional[bool]): use a sparse decomposition
-            threshold (optional[float]): elements with coefficients smaller than this value will be ignored
         """
         self.use_sparse = sparse
-        self.threshold = threshold
         super().__init__(matrix, circuits, coefficients, load)
 
     @staticmethod
@@ -467,7 +464,7 @@ class PauliDecomposition(MatrixDecomposition):
             coef: complex_array_type = self._get_pauli_coefficient(
                 self.matrix, pauli_string, self.sparse_matrix
             )
-            if coef * np.conj(coef) >= self.threshold:
+            if np.isclose(coef * np.conj(coef), 0):
                 self.strings.append(pauli_string)
                 coeffs.append(prefactor * coef)
                 circuits.append(self._create_circuit(pauli_string))
