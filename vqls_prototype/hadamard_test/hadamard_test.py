@@ -8,6 +8,10 @@ from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 
+from qiskit.primitives.estimator import EstimatorResult
+from qiskit.primitives.containers import PrimitiveResult
+from ..primitives.estimator_run_builder import EstimatorRunBuilder
+
 
 class BatchHadammardTest:
     r"""Class that execute batches of Hadammard Test"""
@@ -36,15 +40,19 @@ class BatchHadammardTest:
         """
 
         ncircuits = len(self.circuits)
+        all_parameter_sets = [parameter_sets] * ncircuits
+
+        test = EstimatorRunBuilder(
+            primitive,
+            self.circuits,
+            self.observable,
+            all_parameter_sets,
+            options={"shots": self.shots}
+        )
 
         try:
             if zne_strategy is None:
-                job = primitive.run(
-                    self.circuits,
-                    self.observable,
-                    [parameter_sets] * ncircuits,
-                    shots=self.shots,
-                )
+                job = test.build_run()
             else:
                 job = primitive.run(
                     self.circuits,
@@ -236,9 +244,18 @@ class HadammardTest:
         Returns:
             npt.NDArray[np.cdouble]: value of the test
         """
-        return np.array([1.0 - 2.0 * val for val in estimator_result.values]).astype(
-            "complex128"
-        )
+        if isinstance(estimator_result, EstimatorResult):
+            print(estimator_result.values)
+            return np.array([1.0 - 2.0 * val for val in estimator_result.values]).astype(
+                "complex128"
+            )
+
+        if isinstance(estimator_result, PrimitiveResult):
+            return np.array([1.0 - 2.0 * val.data.evs for val in estimator_result]).astype(
+                "complex128"
+            )
+
+        raise NotImplementedError(f"Not implemented for {type(estimator_result)} classes.")
 
     def get_value(self, estimator, parameter_sets: List, zne_strategy=None) -> List:
         """Compute the value of the test
