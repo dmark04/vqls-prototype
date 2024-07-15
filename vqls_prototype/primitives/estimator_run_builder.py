@@ -5,8 +5,8 @@ from qiskit.quantum_info import SparsePauliOp
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 from qiskit.primitives import Estimator, PrimitiveJob
 
-from qiskit_aer.primitives import EstimatorV2 as aer_EstimatorV2
 from qiskit_aer.primitives import Estimator as aer_Estimator
+from qiskit_aer.primitives import EstimatorV2 as aer_EstimatorV2
 
 from qiskit_ibm_runtime import Estimator as ibm_runtime_Estimator
 from qiskit_ibm_runtime import EstimatorV2 as ibm_runtime_EstimatorV2
@@ -66,15 +66,15 @@ class EstimatorRunBuilder:
             self.estimator.__class__.__name__,
         )
 
-    def build_run(self) -> Callable:
+    def build_run(self) -> Union[PrimitiveJob, RuntimeJobV2]:
         """
-        Configures and returns a callable function for estimator runs based on its provenance.
+        Configures and returns estimator runs based on its provenance.
 
         Raises:
             NotImplementedError: If the estimator's provenance is not supported.
 
         Returns:
-            Callable: A configured callable function to execute the estimator run.
+            Union[PrimitiveJob, RuntimeJobV2]: A configured callable function to execute the estimator run.
         """
         builder_function = self._select_run_builder()
         return builder_function()
