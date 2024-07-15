@@ -42,17 +42,17 @@ class BatchHadammardTest:
         ncircuits = len(self.circuits)
         all_parameter_sets = [parameter_sets] * ncircuits
 
-        test = EstimatorRunBuilder(
+        estimator_run_builder = EstimatorRunBuilder(
             primitive,
             self.circuits,
             self.observable,
             all_parameter_sets,
-            options={"shots": self.shots}
+            options={"shots": self.shots},
         )
 
         try:
             if zne_strategy is None:
-                job = test.build_run()
+                job = estimator_run_builder.build_run()
             else:
                 job = primitive.run(
                     self.circuits,
@@ -245,17 +245,19 @@ class HadammardTest:
             npt.NDArray[np.cdouble]: value of the test
         """
         if isinstance(estimator_result, EstimatorResult):
-            print(estimator_result.values)
-            return np.array([1.0 - 2.0 * val for val in estimator_result.values]).astype(
-                "complex128"
-            )
+            return np.array(
+                [1.0 - 2.0 * val for val in estimator_result.values]
+            ).astype("complex128")
 
         if isinstance(estimator_result, PrimitiveResult):
-            return np.array([1.0 - 2.0 * val.data.evs for val in estimator_result]).astype(
-                "complex128"
-            )
+            return np.array(
+                [1.0 - 2.0 * val.data.evs for val in estimator_result]
+            ).astype("complex128")
 
-        raise NotImplementedError(f"Not implemented for {type(estimator_result)} classes.")
+        raise NotImplementedError(
+            f"Cannot post processing for {type(estimator_result)} type class."
+            f"Please, refer to {self.__class__.__name__}.post_processing()."
+        )
 
     def get_value(self, estimator, parameter_sets: List, zne_strategy=None) -> List:
         """Compute the value of the test
@@ -269,15 +271,20 @@ class HadammardTest:
         """
 
         ncircuits = len(self.circuits)
+        all_parameter_sets = [parameter_sets] * ncircuits
+        all_observables = [self.observable] * ncircuits
+
+        estimator_run_builder = EstimatorRunBuilder(
+            estimator,
+            self.circuits,
+            all_observables,
+            all_parameter_sets,
+            options={"shots": self.shots},
+        )
 
         try:
             if zne_strategy is None:
-                job = estimator.run(
-                    self.circuits,
-                    [self.observable] * ncircuits,
-                    [parameter_sets] * ncircuits,
-                    shots=self.shots,
-                )
+                job = estimator_run_builder.build_run()
             else:
                 job = estimator.run(
                     self.circuits,

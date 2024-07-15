@@ -22,6 +22,9 @@ from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import ADAM
 from qiskit.primitives import Estimator, Sampler
+
+from qiskit_aer.primitives import EstimatorV2 as aer_EstimatorV2
+
 from vqls_prototype import VQLS
 
 # 8-11-2023
@@ -43,10 +46,12 @@ class TestVQLS(unittest.TestCase):
 
         self.estimators = (
             Estimator(),
+            aer_EstimatorV2(),
             # AerEstimator(),
         )
 
         self.samplers = (
+            Sampler(),
             Sampler(),
             # AerSampler(),
         )
@@ -70,8 +75,8 @@ class TestVQLS(unittest.TestCase):
             zip(self.estimators, self.samplers)
         ):
             for iopt, opt in enumerate(self.options):
-                if iprim == 1 and iopt == 2:
-                    continue
+                # if iprim == 1 and iopt == 2:
+                #    continue
                 vqls = VQLS(
                     estimator,
                     ansatz,
@@ -105,8 +110,8 @@ class TestVQLS(unittest.TestCase):
             zip(self.estimators, self.samplers)
         ):
             for iopt, opt in enumerate(self.options):
-                if iprim == 1 and iopt == 2:
-                    continue
+                # if iprim == 1 and iopt == 2:
+                #    continue
                 vqls = VQLS(
                     estimator,
                     ansatz,
