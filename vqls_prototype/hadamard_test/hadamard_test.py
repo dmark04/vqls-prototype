@@ -10,7 +10,7 @@ import numpy.typing as npt
 
 from qiskit.primitives.estimator import EstimatorResult
 from qiskit.primitives.containers import PrimitiveResult
-from ..primitives.estimator_run_builder import EstimatorRunBuilder
+from vqls_prototype.primitives import EstimatorRunBuilder
 
 
 class BatchHadammardTest:

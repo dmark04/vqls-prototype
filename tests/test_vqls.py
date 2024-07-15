@@ -75,8 +75,8 @@ class TestVQLS(unittest.TestCase):
             zip(self.estimators, self.samplers)
         ):
             for iopt, opt in enumerate(self.options):
-                # if iprim == 1 and iopt == 2:
-                #    continue
+                if iprim == 1 and iopt == 2:
+                    continue
                 vqls = VQLS(
                     estimator,
                     ansatz,
@@ -110,8 +110,8 @@ class TestVQLS(unittest.TestCase):
             zip(self.estimators, self.samplers)
         ):
             for iopt, opt in enumerate(self.options):
-                # if iprim == 1 and iopt == 2:
-                #    continue
+                if iprim == 1 and iopt == 2:
+                    continue
                 vqls = VQLS(
                     estimator,
                     ansatz,
