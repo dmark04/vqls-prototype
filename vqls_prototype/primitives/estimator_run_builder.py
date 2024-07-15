@@ -86,10 +86,10 @@ class EstimatorRunBuilder:
         }
         try:
             return builders[self.provenance]
-        except KeyError:
+        except KeyError as err:
             raise NotImplementedError(
                 f"{self.__class__.__name__} not compatible with {self.provenance}."
-            )
+            ) from err
 
     def _build_native_qiskit_estimator_run(self) -> Callable:
         """Builds a run function for a standard qiskit Estimator."""
@@ -102,8 +102,8 @@ class EstimatorRunBuilder:
         )
 
     def _build_estimatorv2_run(self) -> Callable:
-        """Builds a run function for qiskit-aer and qiskit-ibm-runtime EstimatorV2 with transpilation."""
-        backend = self.estimator._backend
+        """Builds a run function for qiskit-aer and qiskit-ibm-runtime EstimatorV2."""
+        backend = self.estimator._backend  # pylint: disable=protected-access
         optimization_level = 1
         pm = generate_preset_pass_manager(optimization_level, backend)
         pubs = []
