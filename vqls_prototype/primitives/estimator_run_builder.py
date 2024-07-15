@@ -3,12 +3,14 @@ from typing import Union, List, Callable, Tuple, Dict, Any
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+from qiskit.primitives import Estimator, PrimitiveJob
 
-from qiskit.primitives import Estimator
 from qiskit_aer.primitives import EstimatorV2 as aer_EstimatorV2
 from qiskit_aer.primitives import Estimator as aer_Estimator
+
 from qiskit_ibm_runtime import Estimator as ibm_runtime_Estimator
 from qiskit_ibm_runtime import EstimatorV2 as ibm_runtime_EstimatorV2
+from qiskit_ibm_runtime import RuntimeJobV2
 
 EstimatorValidType = Union[
     Estimator,
@@ -77,12 +79,14 @@ class EstimatorRunBuilder:
         builder_function = self._select_run_builder()
         return builder_function()
 
-    def _select_run_builder(self) -> Callable:
+    def _select_run_builder(self) -> Union[PrimitiveJob, RuntimeJobV2]:
         """Selects the appropriate builder function based on the estimator's provenance."""
         builders = {
             ("qiskit", "Estimator"): self._build_native_qiskit_estimator_run,
             ("qiskit_aer", "EstimatorV2"): self._build_estimatorv2_run,
             ("qiskit_aer", "Estimator"): self._build_estimatorv1_run,
+            ("qiskit_ibm_runtime", "EstimatorV2"): self._build_estimatorv2_run,
+            ("qiskit_ibm_runtime", "EstimatorV1"): self._build_estimatorv1_run,
         }
         try:
             return builders[self.provenance]
@@ -91,7 +95,7 @@ class EstimatorRunBuilder:
                 f"{self.__class__.__name__} not compatible with {self.provenance}."
             ) from err
 
-    def _build_native_qiskit_estimator_run(self) -> Callable:
+    def _build_native_qiskit_estimator_run(self) -> PrimitiveJob:
         """Builds a run function for a standard qiskit Estimator."""
         return self.estimator.run(
             self.circuits,
@@ -101,7 +105,7 @@ class EstimatorRunBuilder:
             seed=self.seed,
         )
 
-    def _build_estimatorv2_run(self) -> Callable:
+    def _build_estimatorv2_run(self) -> Union[PrimitiveJob, RuntimeJobV2]:
         """Builds a run function for qiskit-aer and qiskit-ibm-runtime EstimatorV2."""
         backend = self.estimator._backend  # pylint: disable=protected-access
         optimization_level = 1
