@@ -4,6 +4,10 @@ from qiskit_algorithms.exceptions import AlgorithmError
 import numpy as np
 import numpy.typing as npt
 
+from qiskit.primitives.sampler import SamplerResult
+from qiskit.primitives.containers import PrimitiveResult
+from vqls_prototype.primitives_run_builder import SamplerRunBuilder
+
 
 class BatchHadammardOverlapTest:
     r"""Class that execute batches of Hadammard Test"""
@@ -31,14 +35,18 @@ class BatchHadammardOverlapTest:
         """
 
         ncircuits = len(self.circuits)
+        all_parameter_sets = [parameter_sets] * ncircuits
+
+        sampler_run_builder = SamplerRunBuilder(
+            sampler,
+            self.circuits,
+            all_parameter_sets,
+            options={"shots": self.shots},
+        )
 
         try:
             if zne_strategy is None:
-                job = sampler.run(
-                    self.circuits,
-                    [parameter_sets] * ncircuits,
-                    shots=self.shots,
-                )
+                job = sampler_run_builder.build_run()
             else:
                 job = sampler.run(
                     self.circuits,
@@ -240,8 +248,24 @@ class HadammardOverlapTest:
         Returns:
             List: value of the overlap hadammard test
         """
+        if isinstance(sampler_result, SamplerResult):
+            quasi_dist = sampler_result.quasi_dists
 
-        quasi_dist = sampler_result.quasi_dists
+        elif isinstance(sampler_result, PrimitiveResult):
+            quasi_dist = [
+                {
+                    key: value / result.data.meas.num_shots
+                    for key, value in result.data.meas.get_int_counts().items()
+                }
+                for result in sampler_result
+            ]
+
+        else:
+            raise NotImplementedError(
+                f"Cannot post processing for {type(sampler_result)} type class."
+                f"Please, refer to {self.__class__.__name__}.post_processing()."
+            )
+
         output = []
 
         for qdist in quasi_dist:
@@ -269,7 +293,15 @@ class HadammardOverlapTest:
             float: value of the overlap hadammard test
         """
         ncircuits = len(self.circuits)
-        job = sampler.run(self.circuits, [parameter_sets] * ncircuits, shots=self.shots)
+        all_parameter_sets = [parameter_sets] * ncircuits
+
+        sampler_run_builder = SamplerRunBuilder(
+            sampler,
+            self.circuits,
+            all_parameter_sets,
+            options={"shots": self.shots},
+        )
+        job = sampler_run_builder.build_run()
         results = self.post_processing(job.result())
 
         results *= np.array([1.0, 1.0j])
