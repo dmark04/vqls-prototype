@@ -72,13 +72,8 @@ class TestVQLS(unittest.TestCase):
         rhs = np.array([0.1] * 4)
         ansatz = RealAmplitudes(num_qubits=2, reps=3, entanglement="full")
 
-        for iprim, (estimator, sampler) in enumerate(
-            zip(self.estimators, self.samplers)
-        ):
-            for iopt, opt in enumerate(self.options):
-                # if iprim == 1 and iopt == 2:
-                #     continue
-                print(iprim, iopt)
+        for _, (estimator, sampler) in enumerate(zip(self.estimators, self.samplers)):
+            for _, opt in enumerate(self.options):
                 vqls = VQLS(
                     estimator,
                     ansatz,
@@ -108,13 +103,8 @@ class TestVQLS(unittest.TestCase):
         qc2.x(1)
         qc2.cx(0, 1)
 
-        for iprim, (estimator, sampler) in enumerate(
-            zip(self.estimators, self.samplers)
-        ):
-            for iopt, opt in enumerate(self.options):
-                # if iprim == 1 and iopt == 2:
-                #     continue
-                print(iprim, iopt)
+        for _, (estimator, sampler) in enumerate(zip(self.estimators, self.samplers)):
+            for _, opt in enumerate(self.options):
                 vqls = VQLS(
                     estimator,
                     ansatz,
