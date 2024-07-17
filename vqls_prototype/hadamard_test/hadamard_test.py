@@ -8,6 +8,10 @@ from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 
+from qiskit.primitives.estimator import EstimatorResult
+from qiskit.primitives.containers import PrimitiveResult
+from vqls_prototype.primitives_run_builder import EstimatorRunBuilder
+
 
 class BatchHadammardTest:
     r"""Class that execute batches of Hadammard Test"""
@@ -36,15 +40,19 @@ class BatchHadammardTest:
         """
 
         ncircuits = len(self.circuits)
+        all_parameter_sets = [parameter_sets] * ncircuits
+
+        estimator_run_builder = EstimatorRunBuilder(
+            primitive,
+            self.circuits,
+            self.observable,
+            all_parameter_sets,
+            options={"shots": self.shots},
+        )
 
         try:
             if zne_strategy is None:
-                job = primitive.run(
-                    self.circuits,
-                    self.observable,
-                    [parameter_sets] * ncircuits,
-                    shots=self.shots,
-                )
+                job = estimator_run_builder.build_run()
             else:
                 job = primitive.run(
                     self.circuits,
@@ -236,8 +244,19 @@ class HadammardTest:
         Returns:
             npt.NDArray[np.cdouble]: value of the test
         """
-        return np.array([1.0 - 2.0 * val for val in estimator_result.values]).astype(
-            "complex128"
+        if isinstance(estimator_result, EstimatorResult):
+            return np.array(
+                [1.0 - 2.0 * val for val in estimator_result.values]
+            ).astype("complex128")
+
+        if isinstance(estimator_result, PrimitiveResult):
+            return np.array(
+                [1.0 - 2.0 * val.data.evs for val in estimator_result]
+            ).astype("complex128")
+
+        raise NotImplementedError(
+            f"Cannot post processing for {type(estimator_result)} type class."
+            f"Please, refer to {self.__class__.__name__}.post_processing()."
         )
 
     def get_value(self, estimator, parameter_sets: List, zne_strategy=None) -> List:
@@ -252,15 +271,20 @@ class HadammardTest:
         """
 
         ncircuits = len(self.circuits)
+        all_parameter_sets = [parameter_sets] * ncircuits
+        all_observables = [self.observable] * ncircuits
+
+        estimator_run_builder = EstimatorRunBuilder(
+            estimator,
+            self.circuits,
+            all_observables,
+            all_parameter_sets,
+            options={"shots": self.shots},
+        )
 
         try:
             if zne_strategy is None:
-                job = estimator.run(
-                    self.circuits,
-                    [self.observable] * ncircuits,
-                    [parameter_sets] * ncircuits,
-                    shots=self.shots,
-                )
+                job = estimator_run_builder.build_run()
             else:
                 job = estimator.run(
                     self.circuits,
