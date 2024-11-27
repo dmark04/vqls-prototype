@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/github/license/quantumapplicationlab/vqls-prototype?label=License)](https://github.com/quantumapplicationlab/vqls-prototype/blob/main/LICENSE.txt)
 [![Code style: Black](https://img.shields.io/badge/Code%20style-Black-000.svg)](https://github.com/psf/black)
 [![Tests](https://github.com/quantumapplicationlab/vqls-prototype/actions/workflows/coverage.yml/badge.svg)](https://github.com/quantumapplicationlab/vqls-prototype/actions/workflows/coverage.yml)
-[![Coverage](https://coveralls.io/repos/github/quantumapplicationlab/vqls-prototype/badge.svg?branch=main)](https://coveralls.io/github/quantumapplicationlab/vqls-prototype?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/QuantumApplicationLab/vqls-prototype/badge.svg?branch=main)](https://coveralls.io/github/QuantumApplicationLab/vqls-prototype?branch=main)
 
 # Variational Quantum Linear Solver Prototype
 
