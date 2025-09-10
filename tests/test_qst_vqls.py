@@ -19,7 +19,7 @@ import numpy as np
 from qiskit.circuit.library import RealAmplitudes
 
 from qiskit_algorithms.optimizers import COBYLA
-from qiskit.primitives import Estimator, Sampler
+from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 from vqls_prototype import QST_VQLS, VQLSLog
 
 
@@ -32,12 +32,12 @@ class TestQSTVQLS(unittest.TestCase):
         self.options = ({"use_local_cost_function": False, "use_overlap_test": False},)
 
         self.estimators = (
-            Estimator(),
+            StatevectorEstimator(),
             # AerEstimator(),
         )
 
         self.samplers = (
-            Sampler(),
+            StatevectorSampler(),
             # AerSampler(),
         )
 

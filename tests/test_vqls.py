@@ -17,9 +17,9 @@ import unittest
 
 import numpy as np
 
-from qiskit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.primitives import Estimator, Sampler
+from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 
 from qiskit_algorithms.optimizers import ADAM
 
@@ -46,13 +46,13 @@ class TestVQLS(unittest.TestCase):
         )
 
         self.estimators = (
-            Estimator(),
+            StatevectorEstimator(),
             aer_EstimatorV2(),
             # AerEstimator(),
         )
 
         self.samplers = (
-            Sampler(),
+            StatevectorSampler(),
             aer_SamplerV2(),
             # AerSampler(),
         )

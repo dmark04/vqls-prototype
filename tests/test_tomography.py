@@ -16,7 +16,7 @@ import numpy as np
 
 from qiskit_aer import Aer
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.primitives import Sampler
+from qiskit.primitives import StatevectorSampler
 
 from vqls_prototype.tomography import FullQST, SimulatorQST, HTreeQST, ShadowQST
 
@@ -42,13 +42,13 @@ class TestTomography(unittest.TestCase):
         # assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
     def test_htree_qst(self):
-        sampler = Sampler()
+        sampler = StatevectorSampler()
         htree_qst = HTreeQST(self.ansatz, sampler)
         sol = htree_qst.get_relative_amplitude_sign(self.parameters)
         assert np.allclose(self.ref, sol) or np.allclose(self.ref, -sol)
 
     def test_shadow_qst(self):
-        sampler = Sampler()
+        sampler = StatevectorSampler()
         shadow_qst = ShadowQST(self.ansatz, sampler, 10000)
         _ = shadow_qst.get_relative_amplitude_sign(self.parameters)
         # this test can also fail on GH
