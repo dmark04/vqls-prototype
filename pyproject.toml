@@ -3,32 +3,28 @@
 [project]
 name = "vqls_prototype"
 version = "0.2.0"
-# dynamic = [
-#    "version",
-# ]
 readme = "README.md"
 requires-python = ">=3.9,<4"
 license = {file = "LICENSE.txt"}
-description = "Repository for a quantum prototype"
+description = "Repository for a quantum vqls prototype"
 authors = [
    { name = "Nicolas Renaud", email = "nicolas.gm.renaud@gmail.com"},
 ]
-
 dependencies = [
     "certifi>=2025.7.9",
     "importlib_metadata>=4.8.1",
     "qiskit-aer>=0.0.17.1",
-    "qiskit>=1.4.3,<2.0.0",
+    "qiskit>=2.0,<3.0.0",
     "qiskit_experiments>=0.11.0",
     "qiskit_ibm_runtime>=0.40.1",
-    "qiskit_algorithms>=0.3.1",
+    "qiskit-algorithms>=0.4.0",
     "ipykernel>=6.15.0",
     "matplotlib>=3.5.3",
     "pylatexenc>=2.10",
     "tqdm>=4.64.1",
     "networkx>=2.8.4",
     "sparse>=0.14.0",
-    "treelib"
+    "treelib",
 ]
 
 [project.optional-dependencies]

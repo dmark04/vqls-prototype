@@ -1,26 +1,25 @@
-"""Hadammard test."""
+"""Hadamard test."""
 
 from typing import Optional, List, Union
 from qiskit import QuantumCircuit
 from qiskit_algorithms.exceptions import AlgorithmError
-from qiskit.quantum_info import Operator
 from qiskit.quantum_info import SparsePauliOp
 import numpy as np
 import numpy.typing as npt
 
-from qiskit.primitives.estimator import EstimatorResult
+from qiskit.primitives import EstimatorResult
 from qiskit.primitives.containers import PrimitiveResult
 from vqls_prototype.primitives_run_builder import EstimatorRunBuilder
 
 
-class BatchHadammardTest:
-    r"""Class that execute batches of Hadammard Test"""
+class BatchHadamardTest:
+    r"""Class that execute batches of Hadamard Test"""
 
     def __init__(self, hdmr_list: List):
         """Create a single container that computes many hadamard tests
 
         Args:
-            hdrm_list (List): A list of HadamardTest instances
+            hdmr_list (List): A list of HadamardTest instances
         """
         self.hdmr_list = hdmr_list
         self.circuits = [c for hdmr in hdmr_list for c in hdmr.circuits]
@@ -32,7 +31,7 @@ class BatchHadammardTest:
         """Compute the value of the test
 
         Args:
-            estimator (Estimator): an estimator instance
+            primitive (qiskit.primitives): a primitive instance
             parameter_sets (List): The list of parameter values for the circuit
 
         Returns:
@@ -65,13 +64,13 @@ class BatchHadammardTest:
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
-                "The primitive to evaluate the Hadammard Test failed!"
+                "The primitive to evaluate the Hadamard Test failed!"
             ) from exc
         results *= np.array([1.0, 1.0j] * (ncircuits // 2))
         return results.reshape(-1, 2).sum(1).reshape(-1)
 
 
-class HadammardTest:
+class HadamardTest:
     r"""Class to compute the Hadamard Test"""
 
     def __init__(
@@ -85,7 +84,7 @@ class HadammardTest:
     ):
         r"""Create the quantum circuits required to compute the hadamard test:
 
-        .. math::
+        ... math::
 
             \\langle \\Psi | U | \\Psi \\rangle
 
@@ -189,7 +188,7 @@ class HadammardTest:
             if use_barrier:
                 circuit.barrier()
 
-            # hadadmard gate on ctrl qbit
+            # hadamard gate on ctrl qbit
             circuit.h(0)
 
             # Sdg on ctrl qbit
@@ -220,11 +219,11 @@ class HadammardTest:
 
         return circuits
 
-    def _build_observable(self) -> List[Operator]:
+    def _build_observable(self) -> SparsePauliOp:
         """Create the operator to measure |1> on the control qubit.
 
         Returns:
-            Lis[TensoredOp]: List of two observables to measure
+            SparsePauliOp: List of two observables to measure
                 |1> on the control qubit I^...^I^|1><1|
         """
 
@@ -265,6 +264,7 @@ class HadammardTest:
         Args:
             estimator (Estimator): an estimator instance
             parameter_sets (List): The list of parameter values for the circuit
+            zne_strategy (bool): zne strategy
 
         Returns:
             List: value of the test
@@ -296,7 +296,7 @@ class HadammardTest:
             results = self.post_processing(job.result())
         except Exception as exc:
             raise AlgorithmError(
-                "The primitive to evaluate the Hadammard Test failed!"
+                "The primitive to evaluate the Hadamard Test failed!"
             ) from exc
 
         results *= np.array([1.0, 1.0j])

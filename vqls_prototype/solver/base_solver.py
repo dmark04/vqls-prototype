@@ -6,7 +6,7 @@ import numpy as np
 
 
 from qiskit import QuantumCircuit
-from qiskit.primitives import BaseEstimator, BaseSampler
+from qiskit.primitives import BaseEstimatorV2, BaseSamplerV2
 from qiskit_algorithms.variational_algorithm import VariationalAlgorithm
 from qiskit_algorithms.utils.validation import validate_min
 from qiskit.circuit.library.n_local.real_amplitudes import RealAmplitudes
@@ -40,10 +40,10 @@ class BaseSolver(VariationalAlgorithm, VariationalLinearSolver):
 
     def __init__(
         self,
-        estimator: BaseEstimator,
+        estimator: BaseEstimatorV2,
         ansatz: QuantumCircuit,
         optimizer: Union[Optimizer, Minimizer],
-        sampler: Union[BaseSampler, None],
+        sampler: Union[BaseSamplerV2, None],
         initial_point: Union[np.ndarray, None],
         gradient: Union[BaseEstimatorGradient, Callable, None],
         max_evals_grouped: int,

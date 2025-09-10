@@ -3,7 +3,7 @@
 from typing import Union, List, Dict, Any
 from qiskit import QuantumCircuit
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit.primitives import Sampler, PrimitiveJob
+from qiskit.primitives import StatevectorSampler, PrimitiveJob
 from qiskit_aer.primitives import Sampler as aer_Sampler
 from qiskit_aer.primitives import SamplerV2 as aer_SamplerV2
 from qiskit_ibm_runtime import Sampler as ibm_runtime_Sampler
@@ -13,7 +13,7 @@ from qiskit_ibm_runtime import RuntimeJobV2
 from .base_run_builder import BasePrimitiveRunBuilder
 
 SamplerValidType = Union[
-    Sampler,
+    StatevectorSampler,
     aer_Sampler,
     aer_SamplerV2,
     ibm_runtime_Sampler,

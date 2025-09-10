@@ -11,7 +11,7 @@ from typing import Optional, Union, List, Callable, Dict, Tuple
 from qiskit_algorithms.optimizers import Minimizer, Optimizer
 import numpy as np
 from qiskit_algorithms.gradients import BaseEstimatorGradient
-from qiskit.primitives import BaseEstimator, BaseSampler
+from qiskit.primitives import BaseEstimatorV2, BaseSamplerV2
 from qiskit_aer import Aer
 from qiskit import QuantumCircuit
 
@@ -117,10 +117,10 @@ class Hybrid_QST_VQLS(BaseSolver):
 
     def __init__(
         self,
-        estimator: BaseEstimator,
+        estimator: BaseEstimatorV2,
         ansatz: QuantumCircuit,
         optimizer: Union[Optimizer, Minimizer],
-        sampler: Union[BaseSampler, None],
+        sampler: Union[BaseSamplerV2, None],
         initial_point: Optional[Union[np.ndarray, None]] = None,
         gradient: Optional[Union[BaseEstimatorGradient, Callable, None]] = None,
         max_evals_grouped: Optional[int] = 1,

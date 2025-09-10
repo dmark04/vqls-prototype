@@ -4,7 +4,7 @@ from typing import Union, List, Dict, Any
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit.primitives import Estimator, PrimitiveJob
+from qiskit.primitives import StatevectorEstimator, PrimitiveJob
 from qiskit_aer.primitives import Estimator as aer_Estimator
 from qiskit_aer.primitives import EstimatorV2 as aer_EstimatorV2
 from qiskit_ibm_runtime import Estimator as ibm_runtime_Estimator
@@ -13,7 +13,7 @@ from qiskit_ibm_runtime import RuntimeJobV2
 from .base_run_builder import BasePrimitiveRunBuilder
 
 EstimatorValidType = Union[
-    Estimator,
+    StatevectorEstimator,
     aer_Estimator,
     aer_EstimatorV2,
     ibm_runtime_Estimator,

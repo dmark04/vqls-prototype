@@ -4,7 +4,7 @@ from qiskit_algorithms.exceptions import AlgorithmError
 import numpy as np
 import numpy.typing as npt
 
-from qiskit.primitives.sampler import SamplerResult
+from qiskit.primitives import SamplerResult
 from qiskit.primitives.containers import PrimitiveResult
 from vqls_prototype.primitives_run_builder import SamplerRunBuilder
 

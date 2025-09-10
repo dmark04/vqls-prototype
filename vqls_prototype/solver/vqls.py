@@ -31,8 +31,8 @@ from ..matrix_decomposition.optimized_matrix_decomposition import (
     ContractedPauliDecomposition,
 )
 from ..hadamard_test.hadamard_test import (
-    HadammardTest,
-    BatchHadammardTest,
+    HadamardTest,
+    BatchHadamardTest,
 )
 
 from ..hadamard_test.hadamard_overlap_test import (
@@ -328,7 +328,7 @@ class VQLS(BaseSolver):
         elif isinstance(self.matrix_circuits, ContractedPauliDecomposition):
             for circ in self.matrix_circuits.contracted_circuits:
                 hdmr_tests_norm.append(
-                    HadammardTest(  # type: ignore[arg-type]
+                    HadamardTest(  # type: ignore[arg-type]
                         operators=[circ],
                         apply_initial_state=self._ansatz,
                         apply_measurement=False,
@@ -344,7 +344,7 @@ class VQLS(BaseSolver):
                 for jj_mat in range(ii_mat + 1, len(self.matrix_circuits)):
                     mat_j = self.matrix_circuits[jj_mat]
                     hdmr_tests_norm.append(
-                        HadammardTest(  # type: ignore[arg-type]
+                        HadamardTest(  # type: ignore[arg-type]
                             operators=[mat_i.circuit.inverse(), mat_j.circuit],
                             apply_initial_state=self._ansatz,
                             apply_measurement=False,
@@ -378,7 +378,7 @@ class VQLS(BaseSolver):
 
                     # create Hadammard circuit
                     hdmr_tests_overlap.append(
-                        HadammardTest(
+                        HadamardTest(
                             operators=[
                                 mat_i.circuit,
                                 self.vector_circuit.inverse(),
@@ -429,7 +429,7 @@ class VQLS(BaseSolver):
         # or using the normal Hadamard tests
 
         # Note there is an issue if we direcly pass self.vector_circuit.inverse()
-        # as an operator to the HadammardTest.
+        # as an operator to the HadamardTest.
         # therefore we first create the controlled version of self.vector_circuit.inverse()
         # and pass that to Hadammard test requiring not to apply control
 
@@ -444,7 +444,7 @@ class VQLS(BaseSolver):
         hdmr_tests = []
         for mat_i in self.matrix_circuits:
             hdmr_tests.append(
-                HadammardTest(
+                HadamardTest(
                     operators=[self.ansatz, mat_i.circuit, qc_u],
                     apply_control_to_operator=[True, True, False],
                     apply_measurement=False,
@@ -536,7 +536,7 @@ class VQLS(BaseSolver):
                 OptimizedPauliDecomposition,
             ]:
                 # switch to sampler primitve if we do measurement optimization
-                BatchTest = BatchHadammardTest
+                BatchTest = BatchHadamardTest
                 if isinstance(self.matrix_circuits, OptimizedPauliDecomposition):
                     primitive = self.sampler
                     BatchTest = BatchDirectHadammardTest
@@ -556,13 +556,13 @@ class VQLS(BaseSolver):
             # compute the norm with other decomposition
             else:
                 # estimate the expected values of the norm circuits
-                hdmr_values_norm = BatchHadammardTest(hdmr_tests_norm).get_values(
+                hdmr_values_norm = BatchHadamardTest(hdmr_tests_norm).get_values(
                     primitive, parameters
                 )
 
             # switch primitive to sampler if we do overlap test
             primitive = self.estimator
-            BatchTest = BatchHadammardTest
+            BatchTest = BatchHadamardTest
             if self.options["use_overlap_test"]:
                 primitive = self.sampler
                 BatchTest = BatchHadammardOverlapTest
