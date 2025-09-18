@@ -3513,7 +3513,7 @@ wheels = [
 
 [[package]]
 name = "qiskit-algorithms"
-version = "0.3.0"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -3523,9 +3523,9 @@ dependencies = [
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/76/f9/f5e95c3f9c3b886afa4f56adc58074af34e0e5bd0bde55e747b6cb45f0b2/qiskit-algorithms-0.3.0.tar.gz", hash = "sha256:02eedcbb079c6da371421a50cb296ff1dc6ce4a1c478ec521ff6e62c9bc53e10", size = 240473, upload-time = "2024-02-19T12:07:57.367Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/86/d0f8ccae25281d49ebb0e2b59076c2d815389c16a4f7a379936f21065e94/qiskit_algorithms-0.4.0.tar.gz", hash = "sha256:b945e807c9b94ba2e0d2e02898b1f1e1a33efd3b4a6dc5a45bb787c6832d4093", size = 259556, upload-time = "2025-08-29T18:32:24.076Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/2f/9a71fc36ff8de0188d4325399e1ad29c8fce2c2b427dae6c900003510943/qiskit_algorithms-0.3.0-py3-none-any.whl", hash = "sha256:8ae1aa8aafc32864890a31c06d19f100a79df6412350f1f4b8c124cd17b3f731", size = 308560, upload-time = "2024-02-19T12:07:56.03Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/23/ab868be0ea11e0054ac4962d27f80cc064e007f8e34b7b61808a25227cca/qiskit_algorithms-0.4.0-py3-none-any.whl", hash = "sha256:c8bfc119e270c7cd7d6013e62193914381bd71fd4cdc847c07b50c749fd0114d", size = 327840, upload-time = "2025-08-29T18:32:22.659Z" },
 ]
 
 [[package]]
@@ -4641,9 +4641,9 @@ requires-dist = [
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=2.9.5" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2.5" },
     { name = "pytest-randomly", marker = "extra == 'dev'", specifier = ">=1.2.0" },
-    { name = "qiskit", specifier = ">=1.4.2,<2.0.0" },
+    { name = "qiskit", specifier = ">=1.0.0,<2.0.0" },
     { name = "qiskit-aer", specifier = ">=0.0.17.1" },
-    { name = "qiskit-algorithms", specifier = ">=0.3.0" },
+    { name = "qiskit-algorithms", specifier = ">=0.4.0" },
     { name = "qiskit-experiments", specifier = ">=0.11.0" },
     { name = "qiskit-ibm-runtime", specifier = ">=0.35" },
     { name = "qiskit-sphinx-theme", marker = "extra == 'dev'", specifier = "~=1.16.0" },
